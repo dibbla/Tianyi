@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>天衣 · 无缝的江湖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cloth:#141821; --cloth2:#1b212c; --cloth3:#222a37;
+  --weft:#2f3a4c; --weft2:#3d4a60;
+  --silk:#ded8c9; --silk2:#a49e90; --silk3:#736f66;
+  --thread:#c9a227; --thread2:#e8c65a;
+  --cinnabar:#a8443c; --jade:#5f9078; --violet:#7b6b9b;
+  --r:2px;
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --kai:"STKaiti","Kaiti SC","KaiTi","Noto Serif SC",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--cloth); color:var(--silk); font-family:var(--serif);
+  font-size:15px; line-height:1.85; -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+/* woven ground */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background:
+   repeating-linear-gradient(90deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px),
+   repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px),
+   radial-gradient(120% 80% at 50% 0%,rgba(120,140,180,.07),transparent 70%);}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea{font-family:inherit;font-size:inherit}
+.num{font-variant-numeric:tabular-nums}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-thumb{background:var(--weft);border-radius:9px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ── seam: the running-stitch rule used as every divider ── */
+.seam{height:1px;margin:14px 0;background:repeating-linear-gradient(90deg,var(--weft2) 0 7px,transparent 7px 13px)}
+.seam.gold{background:repeating-linear-gradient(90deg,rgba(201,162,39,.55) 0 7px,transparent 7px 13px)}
+
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
+
+/* ── top bar ── */
+.bar{display:flex;align-items:baseline;gap:14px;padding:9px 18px;border-bottom:1px solid var(--weft);
+  background:linear-gradient(180deg,#1a202b,#141821);flex:0 0 auto}
+.bar h1{font-family:var(--kai);font-size:19px;font-weight:600;margin:0;letter-spacing:.22em;color:var(--silk)}
+.bar h1 em{font-style:normal;color:var(--thread)}
+.bar .sub{color:var(--silk3);font-size:12.5px;letter-spacing:.1em}
+.bar .right{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:12.5px;color:var(--silk3)}
+.bar .right b{color:var(--thread);font-weight:400}
+
+.grid{flex:1 1 auto;display:grid;grid-template-columns:262px minmax(0,1fr);min-height:0}
+.col{min-height:0;overflow-y:auto;padding:16px 18px}
+#char{border-right:1px solid var(--weft);background:#171c26}
+
+
+/* ── character panel ── */
+.pname{font-family:var(--kai);font-size:22px;letter-spacing:.12em;margin:0 0 2px}
+.ptitle{color:var(--thread);font-size:12.5px;letter-spacing:.14em;margin-bottom:2px}
+.psect{color:var(--silk3);font-size:12.5px}
+.gauge{margin:9px 0}
+.gauge .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--silk3);margin-bottom:3px}
+.gauge .lab b{color:var(--silk2);font-weight:400}
+.track{height:5px;background:#0e1219;border:1px solid #222a36;overflow:hidden}
+.fill{height:100%;transition:width .4s ease}
+.fill.qi{background:linear-gradient(90deg,#8a6f1a,var(--thread2))}
+.fill.exp{background:linear-gradient(90deg,#3d5f52,var(--jade))}
+.fill.hp{background:linear-gradient(90deg,#6d2f2a,#c9564b)}
+.attrs{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:13.5px}
+.attrs div{display:flex;justify-content:space-between;border-bottom:1px dotted #283040;padding:2px 0}
+.attrs span{color:var(--silk3)}
+.attrs b{font-weight:400;color:var(--silk)}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:1.5px 0;color:var(--silk2)}
+.kv b{font-weight:400;color:var(--silk)}
+.hd{font-family:var(--kai);font-size:13.5px;color:var(--thread);letter-spacing:.2em;margin:0 0 8px}
+
+/* ── tabs ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--weft);margin:-16px -18px 16px;padding:0 18px;
+  position:sticky;top:-16px;background:#141821;z-index:5;flex-wrap:wrap}
+.tab{padding:10px 15px;font-family:var(--kai);font-size:15px;letter-spacing:.16em;color:var(--silk3);
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--silk2)}
+.tab.on{color:var(--thread2);border-bottom-color:var(--thread)}
+.tab .dot{display:inline-block;width:5px;height:5px;background:var(--cinnabar);border-radius:50%;
+  vertical-align:top;margin-left:3px}
+
+/* ── cards ── */
+.card{border:1px solid var(--weft);background:var(--cloth2);padding:13px 15px;margin-bottom:11px}
+.card.sel{border-color:var(--thread);background:#232a1f}
+.card .t{font-family:var(--kai);font-size:16px;letter-spacing:.1em}
+.card .d{color:var(--silk2);font-size:13px;margin-top:4px}
+.card .m{color:var(--silk3);font-size:12px;margin-top:5px}
+.row{display:flex;gap:12px;align-items:flex-start}
+.row .g{flex:1 1 auto;min-width:0}
+.tag{display:inline-block;border:1px solid var(--weft2);color:var(--silk3);font-size:11.5px;
+  padding:0 6px;margin-right:5px;letter-spacing:.08em}
+.tag.gold{border-color:#6b5716;color:var(--thread)}
+.tag.jade{border-color:#33503f;color:var(--jade)}
+.tag.red{border-color:#5a2c28;color:#c4675c}
+.btn{border:1px solid var(--weft2);padding:5px 13px;color:var(--silk2);letter-spacing:.1em;font-size:13.5px;
+  transition:background .15s,color .15s,border-color .15s;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--thread);color:var(--thread2);background:#20242038}
+.btn:disabled{opacity:.32;cursor:not-allowed}
+.btn.pri{border-color:#6b5716;color:var(--thread2);background:#231f14}
+.btn.pri:hover{background:#2e2716}
+.btn.sm{padding:2px 9px;font-size:12.5px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:11px}
+.muted{color:var(--silk3)}
+.empty{color:var(--silk3);text-align:center;padding:34px 10px;font-family:var(--kai);letter-spacing:.16em}
+
+/* ── log ── */
+.logline{font-size:13.2px;line-height:1.7;padding:4px 0;border-bottom:1px dotted #232b39;color:var(--silk2)}
+.logline i{font-style:normal;color:var(--silk3);font-size:11.5px;margin-right:6px}
+.logline.g{color:var(--jade)} .logline.r{color:#c4675c} .logline.y{color:var(--thread)}
+.logline.v{color:#9c8bc0}
+
+/* ── overlays ── */
+.veil{position:fixed;inset:0;z-index:60;background:rgba(8,10,14,.93);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:22px;overflow-y:auto}
+.sheet{width:100%;max-width:620px;border:1px solid var(--weft2);background:var(--cloth2);padding:26px 30px;
+  box-shadow:0 22px 70px rgba(0,0,0,.6);max-height:88vh;overflow-y:auto}
+.sheet h2{font-family:var(--kai);font-size:21px;letter-spacing:.24em;margin:0 0 4px;font-weight:600}
+.sheet .who{color:var(--thread);font-family:var(--kai);letter-spacing:.14em;font-size:14px;margin-bottom:10px}
+.story p{margin:0 0 13px;text-indent:2em;max-width:36em}
+.story p.no{text-indent:0}
+.story p.say{text-indent:0;padding-left:1.1em;border-left:2px solid var(--weft2);color:#e6e0d0}
+.opt{display:block;width:100%;text-align:left;border:1px solid var(--weft);padding:9px 14px;margin-bottom:8px;
+  color:var(--silk2);transition:.15s}
+.opt:hover:not(:disabled){border-color:var(--thread);color:var(--thread2);background:#1f2430}
+.opt:disabled{opacity:.35;cursor:not-allowed}
+.opt small{display:block;color:var(--silk3);font-size:12px;margin-top:2px}
+
+/* ── battle ── */
+.vs{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.vs .side{flex:1 1 0;min-width:0}
+.vs .nm{font-family:var(--kai);letter-spacing:.1em;font-size:15px;display:flex;justify-content:space-between}
+.vs .mid{font-family:var(--kai);color:var(--cinnabar);font-size:17px;letter-spacing:.2em}
+#blog{height:300px;overflow-y:auto;border:1px solid var(--weft);background:#11151d;padding:11px 14px;font-size:13.5px}
+#blog div{padding:2.5px 0;animation:fin .25s ease}
+@keyframes fin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.bl-h{color:#c4675c} .bl-y{color:var(--thread2)} .bl-g{color:var(--jade)} .bl-m{color:var(--silk3)}
+.bl-r{color:var(--silk3);text-align:center;letter-spacing:.3em;font-family:var(--kai);padding-top:7px!important}
+
+/* ── prologue ── */
+#pro{position:fixed;inset:0;z-index:80;background:#0a0c11;display:flex;align-items:center;justify-content:center;
+  padding:24px;overflow-y:auto}
+#pro .inner{max-width:560px;width:100%}
+#pro .ttl{font-family:var(--kai);font-size:min(15vw,74px);letter-spacing:.34em;text-indent:.34em;text-align:center;
+  color:var(--silk);margin:0 0 4px;opacity:0;animation:tin 2s ease .3s forwards}
+#pro .tsub{text-align:center;color:var(--thread);letter-spacing:.42em;text-indent:.42em;font-size:12.5px;
+  opacity:0;animation:tin 2s ease 1.1s forwards;margin-bottom:26px}
+@keyframes tin{to{opacity:1}}
+#pro .line{display:block;margin:0 auto 26px;width:190px}
+#pro .line path{stroke:var(--thread);stroke-width:1;fill:none;stroke-dasharray:4 6;
+  stroke-dashoffset:400;animation:draw 3.4s ease .6s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+#pro .txt p{opacity:0;animation:tin 1.5s ease forwards;margin:0 0 12px;color:var(--silk2);text-indent:2em}
+#pro .txt p.no{text-indent:0}
+#pro .go{display:block;margin:22px auto 0;opacity:0;animation:tin 1.4s ease forwards}
+@media (prefers-reduced-motion:reduce){#pro *{animation-duration:.01s!important}}
+
+/* ── forms ── */
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:12.5px;color:var(--silk3);letter-spacing:.14em;margin-bottom:5px}
+.fld input,.fld textarea{width:100%;background:#10141b;border:1px solid var(--weft);color:var(--silk);
+  padding:8px 11px;letter-spacing:.1em}
+.fld input:focus,.fld textarea:focus{outline:none;border-color:var(--thread)}
+.pick{border:1px solid var(--weft);padding:10px 13px;margin-bottom:8px;width:100%;text-align:left;transition:.15s}
+.pick:hover{border-color:var(--weft2);background:#1f2430}
+.pick.on{border-color:var(--thread);background:#232a1f}
+.pick b{font-family:var(--kai);font-size:15.5px;letter-spacing:.12em;font-weight:400;color:var(--silk)}
+.pick p{margin:3px 0 0;font-size:12.8px;color:var(--silk3)}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:34px;z-index:90;display:flex;
+  flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+#toast div{background:#232a37;border:1px solid var(--weft2);padding:6px 16px;font-size:13.5px;
+  animation:tup .3s ease}
+@keyframes tup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.mob{display:none}
+@media (max-width:1080px){
+  .grid{grid-template-columns:230px minmax(0,1fr)}
+}
+@media (max-width:780px){
+  body{font-size:14.5px}
+  .grid{grid-template-columns:1fr}
+  #char{display:none;border-right:none}
+  #char.show{display:block}
+  .col{padding:14px}
+  .tabs{margin:-14px -14px 14px;padding:0 8px;top:-14px}
+  .tab{padding:9px 11px;font-size:14px;letter-spacing:.1em}
+  .bar{padding:8px 14px}
+  .bar .sub{display:none}
+  .mob{display:inline-block}
+  .sheet{padding:20px 18px}
+}
+:focus-visible{outline:2px solid var(--thread);outline-offset:2px}
+
+/* 罗盘与舆图 */
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:290px;margin:2px auto 0}
+.pad .c{display:flex;align-items:center;justify-content:center;min-height:46px}
+.pad button{width:100%;min-height:46px;border:1px solid var(--weft);background:var(--cloth2);
+ color:var(--silk);border-radius:3px;font-family:inherit;font-size:13px;line-height:1.3;cursor:pointer;padding:4px 2px}
+.pad button:hover{border-color:var(--thread);color:var(--thread)}
+.pad button b{display:block;font-size:11px;color:var(--thread);letter-spacing:.1em}
+.pad .here2{border:1px dashed var(--weft);border-radius:3px;color:var(--silk);
+ display:flex;align-items:center;justify-content:center;font-size:13px;text-align:center;opacity:.85}
+.pad .non{opacity:.22;border:1px dashed var(--weft);border-radius:3px}
+.mapg{display:grid;gap:5px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.mapg .cell{min-height:40px;border-radius:3px;display:flex;align-items:center;justify-content:center;
+ font-size:12px;text-align:center;padding:3px;border:1px solid transparent}
+.mapg .on{border-color:var(--weft);background:var(--cloth2);color:var(--silk);cursor:pointer}
+.mapg .on:hover{border-color:var(--thread);color:var(--thread)}
+.mapg .cur{border-color:var(--thread);color:var(--thread);background:rgba(201,162,39,.09)}
+.mapg .off{color:var(--weft)}
+.mapg .cur::after{content:"　◈";font-size:10px}
+
+/* 此地——正文 */
+#place{padding-bottom:2px}
+.locn{font-family:var(--kai);font-size:25px;color:var(--thread);letter-spacing:.06em;margin:2px 0 5px}
+.locd{color:var(--silk);opacity:.8;line-height:1.85;margin-bottom:10px}
+.here{display:flex;flex-wrap:wrap;gap:7px;margin:7px 0}
+.chip{border:1px solid var(--weft);border-radius:2px;padding:5px 11px;background:var(--cloth2);
+ font-size:13px;color:var(--silk);cursor:pointer;font-family:inherit}
+.chip:hover{border-color:var(--thread);color:var(--thread)}
+.chip[disabled]{opacity:.35;cursor:default}
+.chip b{color:var(--thread);font-weight:400}
+.chip.on{border-color:var(--thread);color:var(--thread);background:rgba(201,162,39,.08)}
+.lbl{font-size:12px;letter-spacing:.22em;color:var(--weft);margin:13px 0 4px}
+#logwrap{margin-top:6px}
+#log{max-height:none}
+#drawer{position:sticky;bottom:0;background:linear-gradient(transparent,var(--cloth) 26%);
+ padding:14px 0 4px;margin-top:14px;display:flex;flex-wrap:wrap;gap:7px}
+.sheet .hd:first-child{margin-top:0}
+
+/* 见闻／战斗占上半，舆图占下半 */
+#main{display:flex;flex-direction:column}
+#stage{flex:1 1 auto;min-height:210px;overflow-y:auto;padding-right:4px}
+#world{flex:0 0 auto;padding:4px 0 2px}
+.wgrid{display:grid;grid-template-columns:1fr minmax(210px,1.5fr) 1fr;gap:9px;align-items:center}
+.node{border:1px solid var(--weft);border-radius:5px;padding:9px 10px;background:var(--cloth2);
+ cursor:pointer;text-align:center;transition:border-color .15s,color .15s}
+.node:hover{border-color:var(--thread);color:var(--thread)}
+.node .ar{font-size:11.5px;letter-spacing:.2em;color:var(--thread);opacity:.75}
+.node .nm{font-family:var(--kai);font-size:17px;margin-top:2px}
+.node .st{font-size:11px;opacity:.45;margin-top:2px}
+.node.dim{opacity:.3;cursor:default;border-style:dashed}
+.node.dim:hover{border-color:var(--weft);color:var(--silk)}
+.hub{border:1px solid var(--thread);border-radius:5px;padding:12px 13px;
+ background:rgba(201,162,39,.055);text-align:left}
+.hub .nm{font-family:var(--kai);font-size:22px;color:var(--thread);letter-spacing:.05em}
+.hub .dd{font-size:12.5px;opacity:.72;line-height:1.7;margin:4px 0 8px}
+.wrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tagl{font-size:11px;letter-spacing:.18em;color:var(--weft);margin-top:9px}
+#battle .vs{margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="pro"></div>
+<div id="app" style="display:none">
+  <div class="bar">
+    <h1>天<em>衣</em></h1>
+    <span class="sub">无缝的江湖</span>
+    <button class="btn sm mob" id="mchar" style="margin-left:8px">人物</button>
+    <div class="right">
+      <span id="clock"></span>
+      <span id="silver"></span>
+    </div>
+  </div>
+  <div class="grid">
+    <aside class="col" id="char"></aside>
+    <main class="col" id="main">
+      <div id="stage"><div id="battle" style="display:none"></div><div id="log"></div></div>
+      <div class="seam"></div>
+      <div id="world"></div>
+      <div id="drawer"></div>
+    </main>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="ov"></div>
+<script>
+/* ═══════════ 声 ═══════════
+   全部现算：没有一个音频文件。
+   拨弦用 Karplus-Strong，混响用现生成的脉冲响应，
+   曲子是五声音阶上的即兴，不循环，所以听不出接缝。      */
+const AU={ctx:null,mst:null,bgmG:null,sfxG:null,rev:null,
+ on:true,vb:0.5,vs:0.65,mode:null,timers:[],drone:[],buf:{},ready:false};
+
+function auInit(){
+ if(AU.ctx||AU.dead)return AU.ctx;
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;
+  if(!C){AU.dead=1;return null;}
+  const x=new C();AU.ctx=x;
+  AU.mst=x.createGain();AU.mst.gain.value=AU.on?1:0;AU.mst.connect(x.destination);
+  // 混响：拿噪声按指数衰减生成一条脉冲响应，当作屋子的空气
+  const sec=2.6,N=Math.floor(x.sampleRate*sec),ir=x.createBuffer(2,N,x.sampleRate);
+  for(let c=0;c<2;c++){const d=ir.getChannelData(c);
+   for(let i=0;i<N;i++){const t=i/N;d[i]=(Math.random()*2-1)*Math.pow(1-t,2.6)*(1-t*0.3);}}
+  AU.rev=x.createConvolver();AU.rev.buffer=ir;
+  const wet=x.createGain();wet.gain.value=0.34;AU.rev.connect(wet);wet.connect(AU.mst);
+  AU.bgmG=x.createGain();AU.bgmG.gain.value=AU.vb;AU.bgmG.connect(AU.mst);AU.bgmG.connect(AU.rev);
+  AU.sfxG=x.createGain();AU.sfxG.gain.value=AU.vs;AU.sfxG.connect(AU.mst);AU.sfxG.connect(AU.rev);
+  AU.ready=true;return x;
+ }catch(e){AU.dead=1;return null;}
+}
+function auResume(){const x=auInit();if(x&&x.state==="suspended")x.resume();return x;}
+
+/* ── 五声音阶：宫 商 角 徵 羽 ── */
+const PENT=[0,2,4,7,9];
+function pitch(i){ // i=0 起于 D2
+ const o=Math.floor(i/5),d=PENT[((i%5)+5)%5];
+ return 73.42*Math.pow(2,(d+12*o)/12);
+}
+
+/* ── 拨弦：Karplus-Strong，缓存波形 ── */
+function pluckBuf(f,dur,bright){
+ const x=AU.ctx,key=Math.round(f)+"|"+dur+"|"+(bright||0);
+ if(AU.buf[key])return AU.buf[key];
+ const N=Math.ceil(x.sampleRate*dur),b=x.createBuffer(1,N,x.sampleRate),d=b.getChannelData(0);
+ // 整数长度的延迟线会让高音跑调，差的那点零头用线性插值补回来。
+ // 总延迟 = p + frac + 0.5（平均滤波器自带半个采样）
+ const ideal=x.sampleRate/f-0.5, p=Math.max(2,Math.floor(ideal)), frac=ideal-p;
+ const ring=new Float32Array(p+1);
+ for(let i=0;i<=p;i++)ring[i]=Math.random()*2-1;
+ for(let k=0;k<(bright?1:3);k++)for(let i=1;i<=p;i++)ring[i]=(ring[i]+ring[i-1])*0.5;
+ let idx=0,last=0;const dec=0.9965+(bright?0.0022:0);
+ for(let i=0;i<N;i++){
+  const cur=ring[idx],nxt=ring[(idx+1)%(p+1)];
+  const rd=cur+(nxt-cur)*frac;
+  const v=(rd+last)*0.5*dec;
+  ring[idx]=v;last=rd;d[i]=v;idx=(idx+1)%(p+1);
+ }
+ for(let i=0;i<N;i++)d[i]*=Math.min(1,i/220)*Math.pow(1-i/N,1.35); // 头尾都收干净
+ AU.buf[key]=b;return b;
+}
+function note(f,t,gain,dur,dest,bright){
+ const x=AU.ctx;if(!x)return;
+ const s=x.createBufferSource();s.buffer=pluckBuf(f,dur||2.4,bright);
+ const g=x.createGain();g.gain.value=gain;
+ const lp=x.createBiquadFilter();lp.type="lowpass";lp.frequency.value=bright?5200:2600;
+ s.connect(lp);lp.connect(g);g.connect(dest||AU.bgmG);
+ s.start(t);s.stop(t+(dur||2.4));
+}
+
+/* ── 底下那层气：两个失谐的长音，慢慢起伏 ── */
+function droneOn(root,vol){
+ const x=AU.ctx;if(!x)return;droneOff();
+ for(const det of [0,7]){
+  const o=x.createOscillator();o.type="triangle";
+  o.frequency.value=pitch(root)*(det?1.4983:1)/2;
+  o.detune.value=(Math.random()*10-5);
+  const g=x.createGain();g.gain.value=0;
+  const lp=x.createBiquadFilter();lp.type="lowpass";lp.frequency.value=420;
+  const lfo=x.createOscillator();lfo.type="sine";lfo.frequency.value=0.045+Math.random()*0.03;
+  const la=x.createGain();la.gain.value=vol*0.5;
+  lfo.connect(la);la.connect(g.gain);
+  g.gain.setValueAtTime(0,x.currentTime);
+  g.gain.linearRampToValueAtTime(vol*0.55,x.currentTime+6);
+  o.connect(lp);lp.connect(g);g.connect(AU.bgmG);
+  o.start();lfo.start();AU.drone.push(o,lfo,g);
+ }
+}
+function droneOff(){
+ const x=AU.ctx;if(!x)return;
+ for(const n of AU.drone){try{ if(n.gain){n.gain.cancelScheduledValues(x.currentTime);
+   n.gain.setValueAtTime(n.gain.value,x.currentTime);n.gain.linearRampToValueAtTime(0,x.currentTime+1.2);}
+  else n.stop(x.currentTime+1.4);}catch(e){}}
+ AU.drone=[];
+}
+
+/* ── 曲子：不写死谱，每次现挑 ── */
+const MODES={
+ road :{root:0,gap:[2.6,5.4],reg:[5,13],vol:.30,phr:[1,1,1,2,2,3],drone:.16},
+ town :{root:0,gap:[2.0,4.2],reg:[6,14],vol:.32,phr:[1,2,2,3],      drone:.13},
+ wild :{root:-1,gap:[3.4,7.0],reg:[3,11],vol:.27,phr:[1,1,2],       drone:.20},
+ fight:{root:-2,gap:[0.9,1.9],reg:[2,10],vol:.34,phr:[2,3,3,4],     drone:.22,pulse:1},
+ tale :{root:0,gap:[4.5,9.0],reg:[8,15],vol:.24,phr:[1,1,2],        drone:.15},
+ end  :{root:-1,gap:[3.0,6.0],reg:[4,14],vol:.30,phr:[2,3,4],       drone:.18,fall:1},
+};
+function clearTimers(){AU.timers.forEach(t=>clearTimeout(t));AU.timers=[];}
+function bgm(m){
+ if(!AU.on)return;const x=auInit();if(!x)return;
+ if(AU.mode===m)return;
+ AU.mode=m;clearTimers();
+ const M=MODES[m]||MODES.road;
+ droneOn(M.root,M.drone);
+ let last=Math.floor((M.reg[0]+M.reg[1])/2);
+ const phrase=()=>{
+  if(AU.mode!==m||!AU.on)return;
+  const n=M.phr[Math.floor(Math.random()*M.phr.length)];
+  let t=x.currentTime+0.05;
+  for(let i=0;i<n;i++){
+   // 走法：多是邻音，偶尔跳一下，像有人随手在拨
+   let step=Math.random()<0.68?(Math.random()<0.5?1:-1)
+           :(Math.random()<0.5?2:-2)*(Math.random()<0.3?2:1);
+   if(M.fall)step=-Math.abs(step);
+   last=Math.max(M.reg[0],Math.min(M.reg[1],last+step));
+   const v=M.vol*(0.55+Math.random()*0.5)*(i?0.78:1);
+   note(pitch(last),t,v,2.2+Math.random()*1.6,null,last>11);
+   t+=0.28+Math.random()*0.5;
+   if(Math.random()<0.22)t+=0.4;
+  }
+  if(M.pulse){ // 战里那一下闷响，像远处有人在敲什么
+   const g=x.createGain(),o=x.createOscillator();
+   o.type="sine";o.frequency.setValueAtTime(96,x.currentTime);
+   o.frequency.exponentialRampToValueAtTime(42,x.currentTime+0.22);
+   g.gain.setValueAtTime(0.16,x.currentTime);
+   g.gain.exponentialRampToValueAtTime(0.001,x.currentTime+0.3);
+   o.connect(g);g.connect(AU.bgmG);o.start();o.stop(x.currentTime+0.32);
+  }
+  const gap=M.gap[0]+Math.random()*(M.gap[1]-M.gap[0]);
+  AU.timers.push(setTimeout(phrase,gap*1000));
+ };
+ AU.timers.push(setTimeout(phrase,220));
+}
+function bgmStop(){AU.mode=null;clearTimers();droneOff();}
+
+/* ── 响动 ── */
+function nz(dur){const x=AU.ctx,N=Math.ceil(x.sampleRate*dur),b=x.createBuffer(1,N,x.sampleRate),d=b.getChannelData(0);
+ for(let i=0;i<N;i++)d[i]=Math.random()*2-1;return b;}
+function burst(dur,type,freq,q,vol,fall){
+ const x=AU.ctx;if(!x)return;
+ const s=x.createBufferSource();s.buffer=nz(dur);
+ const f=x.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q||1;
+ if(fall)f.frequency.exponentialRampToValueAtTime(Math.max(80,freq*fall),x.currentTime+dur);
+ const g=x.createGain();
+ g.gain.setValueAtTime(vol,x.currentTime);
+ g.gain.exponentialRampToValueAtTime(0.001,x.currentTime+dur);
+ s.connect(f);f.connect(g);g.connect(AU.sfxG);s.start();s.stop(x.currentTime+dur);
+}
+function tone(f0,f1,dur,vol,type){
+ const x=AU.ctx;if(!x)return;
+ const o=x.createOscillator(),g=x.createGain();
+ o.type=type||"sine";o.frequency.setValueAtTime(f0,x.currentTime);
+ if(f1)o.frequency.exponentialRampToValueAtTime(f1,x.currentTime+dur);
+ g.gain.setValueAtTime(0,x.currentTime);
+ g.gain.linearRampToValueAtTime(vol,x.currentTime+0.006);
+ g.gain.exponentialRampToValueAtTime(0.001,x.currentTime+dur);
+ o.connect(g);g.connect(AU.sfxG);o.start();o.stop(x.currentTime+dur+0.02);
+}
+/* 钟：几个不成整数倍的分音叠起来，才像金属 */
+function bellAt(base,vol,dur){
+ const x=AU.ctx;if(!x)return;
+ [[1,1],[2.76,.45],[5.40,.25],[8.93,.14],[1.51,.3]].forEach(([r,a],i)=>{
+  const o=x.createOscillator(),g=x.createGain();
+  o.type="sine";o.frequency.value=base*r;
+  g.gain.setValueAtTime(0,x.currentTime);
+  g.gain.linearRampToValueAtTime(vol*a,x.currentTime+0.004);
+  g.gain.exponentialRampToValueAtTime(0.0008,x.currentTime+dur*(1-i*0.12));
+  o.connect(g);g.connect(AU.sfxG);o.start();o.stop(x.currentTime+dur+0.1);});
+ burst(0.09,"bandpass",2600,1.2,0.12);
+}
+const SFX={
+ tap  :()=>burst(0.035,"bandpass",1500,3.5,0.28,0.5),
+ page :()=>burst(0.20,"highpass",900,0.8,0.13,2.2),
+ sword:()=>{burst(0.13,"bandpass",2400,2.2,0.30,0.35);tone(1900,620,0.12,0.10,"triangle");},
+ clash:()=>{burst(0.30,"bandpass",3500,1.6,0.34,0.25);tone(2800,700,0.26,0.14,"sawtooth");
+            setTimeout(()=>{if(AU.ctx)burst(0.18,"bandpass",5200,3,0.16,0.4);},38);},
+ hurt :()=>{tone(190,70,0.20,0.24,"sawtooth");burst(0.10,"lowpass",500,1,0.18);},
+ bell :()=>bellAt(196,0.34,3.4),
+ gong :()=>{bellAt(110,0.40,5.2);setTimeout(()=>{if(AU.ctx)bellAt(220,0.16,3.0);},120);},
+ needle:()=>{tone(3140,3140,0.5,0.13,"sine");setTimeout(()=>{if(AU.ctx)tone(4180,4180,0.42,0.07,"sine");},70);},
+ thread:()=>{[0,3,5].forEach((k,i)=>setTimeout(()=>{if(AU.ctx)note(pitch(13+k),AU.ctx.currentTime,0.16,1.6,AU.sfxG,1);},i*95));},
+ coin :()=>{tone(2100,2100,0.07,0.16,"square");setTimeout(()=>{if(AU.ctx)tone(2800,2800,0.10,0.12,"square");},55);},
+ water:()=>{burst(0.55,"lowpass",800,0.7,0.16,0.45);setTimeout(()=>{if(AU.ctx)burst(0.35,"lowpass",600,0.7,0.10,0.5);},210);},
+ step :()=>burst(0.07,"lowpass",420,0.9,0.16,0.6),
+ win  :()=>{bellAt(262,0.22,2.4);setTimeout(()=>{if(AU.ctx)[0,2,4].forEach((k,i)=>
+            setTimeout(()=>{if(AU.ctx)note(pitch(10+k),AU.ctx.currentTime,0.2,2.0,AU.sfxG,1);},i*130));},90);},
+ lose :()=>{tone(150,52,1.5,0.24,"sine");burst(0.7,"lowpass",320,0.8,0.14,0.4);},
+ lvl  :()=>{bellAt(147,0.32,4.2);[0,2,4,5,7].forEach((k,i)=>setTimeout(()=>{if(AU.ctx)
+            note(pitch(8+k),AU.ctx.currentTime,0.22,2.6,AU.sfxG,1);},160+i*150));},
+};
+function sfx(k){
+ if(!AU.on||AU.dead)return;
+ const x=auInit();if(!x)return;
+ if(x.state==="suspended")return;
+ try{(SFX[k]||SFX.tap)();}catch(e){}
+}
+/* 地点决定底噪的性子 */
+function bgmFor(loc){
+ const t={qingpu:"town",duanhe:"town",yunxiu:"town",tiezhen:"town",
+  wuying:"wild",lie:"wild",zhishi:"wild",kuhe:"wild",jianshen:"wild",zhongfu:"wild"};
+ return t[loc]||"road";
+}
+function auSet(k,v){
+ AU[k]=v;
+ if(!AU.ctx)return;
+ if(k==="on")AU.mst.gain.value=v?1:0;
+ if(k==="vb")AU.bgmG.gain.value=v;
+ if(k==="vs")AU.sfxG.gain.value=v;
+}
+/* ═══════════════ 天衣 · 无缝的江湖 ═══════════════
+   一个纯文字放置武侠。原创世界观，与任何小说无涉。 */
+"use strict";
+const $=s=>document.querySelector(s), El=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const rnd=n=>Math.random()*n, ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1)), pick=a=>a[Math.floor(Math.random()*a.length)];
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v)), fmt=n=>{n=Math.floor(n);return n>=1e8?(n/1e8).toFixed(2)+"亿":n>=1e4?(n/1e4).toFixed(1)+"万":""+n;};
+const CN="零一二三四五六七八九十";
+const cn=n=>n<=10?CN[n]:n<20?"十"+CN[n-10]:n<100?CN[Math.floor(n/10)]+"十"+(n%10?CN[n%10]:""):""+n;
+
+/* ───────── 境界 ───────── */
+const REALM=[
+ {n:"淬体",d:"筋骨初开，血气微热。",need:0},
+ {n:"通脉",d:"十二正经贯通，内力始能自行。",need:600},
+ {n:"凝气",d:"气聚丹田，凝而不散。",need:3600},
+ {n:"化劲",d:"暗劲透体，拳不必至而伤已及。",need:21000},
+ {n:"抱丹",d:"一息万转，身如抱一。",need:125000},
+ {n:"罡气",d:"气出体外三寸，刀剑难近。",need:700000},
+ {n:"归元",d:"万法归一，招无定形。",need:4000000},
+ {n:"通玄",d:"已在人之上，天之下。",need:20000000},
+ {n:"天衣",d:"你不再是线上的一个结。你就是线。",need:60000000},
+];
+/* ───────── 属性 ───────── */
+const ATTR={gu:["骨","气血与筋力之本"],mai:["脉","容纳与运转内力"],ling:["灵","参悟武学的快慢"],shi:["势","出手的先后与锋锐"],yuan:["缘","江湖待你的厚薄"]};
+
+/* ───────── 门派 ───────── */
+const SECT={
+ pan:{n:"磐钟寺",loc:"磐钟山",d:"铸钟为佛的僧人。他们相信声音能压住不该醒的东西，所以钟一日不停。",
+   sty:"气血与护体最厚，出手迟缓而难倒。",bias:{gu:4,mai:2},nei:"panzhong",form:"hanzhong",shen:"tabo",
+   join:"扫钟楼的阶，一阶一诵，三千阶为一日功课。"},
+ ku:{n:"枯河道",loc:"枯河谷",d:"洛水断流后才立的道门。他们在干河床上结庐，说水退的地方才见得着底。",
+   sty:"吞吐借力，越打越强，善于反制。",bias:{mai:4,ling:2},nei:"kushui",form:"duanliu",shen:"nianyu",
+   join:"每日子时下到河床最深处，坐到日出，听地下有没有水声。"},
+ zhui:{n:"缀云楼",loc:"云绣坊",d:"天下最好的绣坊，也是天下最快的杀手。针脚与刀法在她们手里是一件事。",
+   sty:"暴击与流血，出手极快，身薄。",bias:{shi:4,ling:2},nei:"saosi",form:"yinzhen",shen:"zheliu",
+   join:"先绣满一百幅《百蝶图》，绣坏一幅，重头来过。"},
+ ta:{n:"踏歌门",loc:"断河集",d:"乞儿、船夫、卖唱的、赌输了的。没有山门，谁在唱谁就是门人。",
+   sty:"闪避与运气，招式散乱却往往救命。",bias:{yuan:4,shi:2,gu:1},nei:"zuili",form:"liangqiang",shen:"jinghong",
+   join:"沿洛水走一趟，不许带钱，走到断河集还活着，就算入门。"},
+ tie:{n:"铁砧堂",loc:"铁砧堡",d:"打了七代兵器的匠人。他们说刀认人，所以先学挨打，再学打人。",
+   sty:"攻击最高，破防，速度慢。",bias:{gu:3,shi:3},nei:"zhenhuo",form:"luochui",shen:"tabo",
+   join:"抡锤三万下，锤不歪，人不倒。"},
+ jian:{n:"青芒剑冢",loc:"剑冢野",d:"一片埋满断剑的荒地。没有掌门，只有一块碑：剑在此，自取。",
+   sty:"均衡而锋利，剑意能叠加。",bias:{shi:3,ling:2,gu:2},nei:"jianming",form:"mangci",shen:"zheliu",
+   join:"在坟场里挑一柄断剑，从此它是你的名字。"},
+};
+/* ───────── 武学 ───────── */
+// k: 内nei 招form 身shen ; cap 上限 ; ex 经验系数 ; ef 效果
+const ART={
+ /* 内功 */
+ tuna:{n:"吐纳诀",k:"nei",cap:20,ex:1,d:"最粗浅的行气法门，人人都会，人人都嫌。",ef:{qi:4,atk:.6}},
+ ximai:{n:"洗麻功",k:"nei",cap:35,ex:1.5,d:"麻绳浸水而不断，取其韧。",ef:{qi:6,hp:6,def:.5}},
+ panzhong:{n:"磐钟大定",k:"nei",cap:70,ex:3,d:"以钟声定心，心定则百骸皆是钟壁。",ef:{hp:14,def:2.2,qi:5,atk:1.7}},
+ kushui:{n:"枯水引",k:"nei",cap:70,ex:3,d:"引敌之力入我干涸之渠。",ef:{qi:12,drain:.004,atk:1.5,hp:17,def:1.1}},
+ saosi:{n:"缫丝心法",k:"nei",cap:70,ex:3,d:"抽丝要匀，匀到极处便是快。",ef:{qi:7,crit:.003,atk:1.6,hp:13,def:.9}},
+ zuili:{n:"醉里乾坤",k:"nei",cap:70,ex:3,d:"身子越歪，破绽越像破绽。",ef:{qi:8,dodge:.004,atk:1.5,hp:14,def:1.0,yuan:.02}},
+ zhenhuo:{n:"砧火功",k:"nei",cap:70,ex:3,d:"火在砧里，不在炉里。",ef:{atk:2.4,hp:13,def:.9,pen:.004}},
+ jianming:{n:"剑鸣内景",k:"nei",cap:70,ex:3,d:"剑未出鞘已先鸣，鸣者，气也。",ef:{atk:2,spd:.5,hp:13,def:.8,crit:.002}},
+ wuxiang:{n:"无相诀",k:"nei",cap:99,ex:6,d:"江湖相传的上乘内功，无门无派，故名无相。",ef:{qi:14,atk:2.6,hp:16,def:1.2}},
+ tianyi:{n:"天衣无缝",k:"nei",cap:120,ex:12,d:"缝天司历代司针所修。行气如走线，周身无一处接头。",ef:{qi:26,atk:5,hp:40,def:3,crit:.003,dodge:.002}},
+ /* 招式 */
+ yelu:{n:"野路拳",k:"form",cap:20,ex:1,cost:0,mul:1.0,d:"街头打架打出来的，没有名字，这是后来才起的。",
+   ln:["{A}一个直拳砸在{B}鼻梁上，毫无章法。","{A}抬脚就踹，{B}踉跄退开。"]},
+ hanzhong:{n:"撼钟掌",k:"form",cap:70,ex:3,cost:6,mul:1.35,ef:{stun:.1},d:"一掌下去，对方胸腔里像有口钟在响。",
+   ln:["{A}掌根拍上{B}前胸，闷响一声，{B}耳中嗡嗡作响。","{A}沉肩坠肘，{S}推出，{B}只觉五脏都被震得挪了位。"]},
+ duanliu:{n:"断流指",k:"form",cap:70,ex:3,cost:8,mul:1.25,ef:{drainHit:.06},d:"指尖一点，截住对方经脉里那一线水。",
+   ln:["{A}二指虚点，{B}臂上一麻，内力竟滞了半息。","{A}指风划过，{B}只觉气机像被掐断的一截河。"]},
+ yinzhen:{n:"银针度厄",k:"form",cap:70,ex:3,cost:5,mul:1.1,ef:{bleed:.5,crit:.08},d:"三十六针，针针都在活门上。",
+   ln:["{A}腕间银光一闪，{B}肩头立刻洇出一点红。","{A}的针落进{B}肋下三寸，血珠顺着衣缝渗出来。"]},
+ liangqiang:{n:"踉跄拳",k:"form",cap:70,ex:3,cost:4,mul:1.15,ef:{dodgeUp:.08},d:"看着要倒，倒过去正好躲开你那一刀。",
+   ln:["{A}脚下一绊，整个人栽向{B}，肘尖却正撞在{B}下巴上。","{A}歪歪扭扭撞过来，{B}闪了个空，挨了记闷的。"]},
+ luochui:{n:"落锤十八",k:"form",cap:70,ex:3,cost:9,mul:1.55,ef:{pen:.18},d:"十八下，一下比一下沉。铁砧不会躲。",
+   ln:["{A}双手抡圆，一记砸落，{B}架起的手臂咔地一沉。","{A}的锤影压下来，{B}护体真气像薄铁皮一样凹了进去。"]},
+ mangci:{n:"芒刺剑",k:"form",cap:70,ex:3,cost:7,mul:1.3,ef:{stack:.06},d:"剑冢里最不起眼的一路，越使越利。",
+   ln:["{A}剑尖抖出一簇芒，{B}身上多了三道细口子。","{A}的剑越来越快，{B}开始跟不上它的节奏。"]},
+ wuxiangchai:{n:"无相拆招",k:"form",cap:99,ex:6,cost:12,mul:1.7,ef:{pen:.12,crit:.05},d:"不记招式，只记人如何动。",
+   ln:["{A}空手入白刃，顺势拆了{B}半边身法。","{A}看穿了{B}的起手，反手一记正落在旧伤上。"]},
+ fengxi:{n:"缝隙一指",k:"form",cap:99,ex:8,cost:16,mul:2.1,ef:{pen:.3,bleed:.6},d:"不打人，打人与人之间那条缝。",
+   ln:["{A}一指点进{B}身侧一处什么都没有的地方，{B}却像被整个撕开。","空气里发出布帛被挑开的轻响，{B}闷哼着后退。"]},
+ /* 身法 */
+ xinglu:{n:"行路法",k:"shen",cap:20,ex:1,d:"走得久一点、快一点，如此而已。",ef:{spd:.6,dodge:.002}},
+ tabo:{n:"踏波步",k:"shen",cap:70,ex:3,d:"在船板上练出来的，落脚永远比船晃得慢半拍。",ef:{spd:1,dodge:.004,def:.4}},
+ nianyu:{n:"蹑淤术",k:"shen",cap:70,ex:3,d:"河泥里走不留印，靠的是不踩实。",ef:{spd:1.2,dodge:.005}},
+ zheliu:{n:"折柳身",k:"shen",cap:70,ex:3,d:"柳枝被折了还能弯回来，人也可以。",ef:{spd:1.4,dodge:.005,hp:6,crit:.001}},
+ jinghong:{n:"惊鸿",k:"shen",cap:70,ex:3,d:"看见的人多，看清的人少。",ef:{spd:1.1,dodge:.007}},
+ wuying:{n:"无影行",k:"shen",cap:99,ex:7,d:"自无影者身上学来的走法。用久了，自己的影子也会淡。",ef:{spd:2.2,dodge:.009,weave:-1}},
+};
+/* ───────── 物品 ───────── */
+const ITEM={
+ sanqi:{n:"三七",t:"药材",p:6,d:"止血生肌，江湖上最不值钱也最要命的东西。"},
+ wangyou:{n:"忘忧草",t:"药材",p:14,d:"嚼之微苦，能压住旧伤发作时的抽痛。"},
+ xuejian:{n:"血见愁",t:"药材",p:34,d:"根须赤红，采药人说它闻得见血。"},
+ tiesha:{n:"玄铁砂",t:"矿料",p:10,d:"河床沙里筛出来的黑砂。"},
+ hantie:{n:"寒铁",t:"矿料",p:40,d:"握久了掌心会冻出白印。"},
+ cansi:{n:"生蚕丝",t:"织料",p:12,d:"未经缫制，粗而韧。"},
+ bingcan:{n:"冰蚕丝",t:"织料",p:60,d:"缀云楼的方子，水里养出来的，不断不烂。"},
+ yinxian:{n:"一寸银线",t:"异物",p:0,d:"从死者口中取出。一寸整，两头齐，找不着接头。",key:1},
+ duanxian:{n:"断线",t:"异物",p:0,d:"它在你手里的时候，你听不见自己的心跳。",key:1},
+ zhen:{n:"针娘的针",t:"异物",p:0,d:"三寸，无孔。你握着它时，整只手都不像自己的。",key:1},
+ jinchuang:{n:"金疮药",t:"丹药",p:30,d:"战后回气血三成。",use:{hp:.3}},
+ peiyuan:{n:"培元丹",t:"丹药",p:120,d:"服下增内力修为，药力随境界水涨船高。",use:{expPct:.006}},
+ dahuan:{n:"大还丹",t:"丹药",p:1400,d:"大补。一炉只得三丸，价钱自然不好看。",use:{expPct:.045}},
+ xisui:{n:"洗髓丹",t:"丹药",p:2000,d:"脱胎换骨。随机一项根基永久+1。",use:{attr:1}},
+ wuwei:{n:"五味子酒",t:"杂物",p:45,d:"裴无咎喝的那种。他说不好喝，但能睡着。"},
+ hebao:{n:"绣荷包",t:"杂物",p:80,d:"针脚细得看不出，是缀云楼的手笔。"},
+ canye:{n:"残页",t:"秘笈",p:200,d:"武学残页。参悟可增某门武学修为。",use:{artPct:.7}},
+ gujuan:{n:"古卷",t:"秘笈",p:1800,d:"完整的一卷。参悟所得远胜残页。",use:{artPct:5}},
+ tuben:{n:"缝天司拓本",t:"秘笈",p:0,d:"不是武功。是一份名册，记着历代司针的名字，最后一个被人用力划掉了。",key:1},
+};
+/* ───────── 装备 ───────── */
+const GEAR={
+ w_mu:{n:"榆木棍",s:"weapon",lv:1,p:20,a:{atk:6}},
+ w_liu:{n:"柳叶刀",s:"weapon",lv:2,p:180,a:{atk:18,spd:1}},
+ w_zhen:{n:"缀云银针",s:"weapon",lv:3,p:900,a:{atk:30,crit:.06,spd:2}},
+ w_chui:{n:"铁砧短锤",s:"weapon",lv:3,p:900,a:{atk:46,spd:-2,pen:.08}},
+ w_qing:{n:"青芒断剑",s:"weapon",lv:3,p:900,a:{atk:36,crit:.03,spd:1}},
+ w_han:{n:"寒铁长刃",s:"weapon",lv:4,p:4200,a:{atk:72,pen:.1}},
+ w_feng:{n:"缝",s:"weapon",lv:6,p:0,a:{atk:150,crit:.1,pen:.2,spd:3},d:"没有刃。你却知道它切得开任何东西。"},
+ a_bu:{n:"粗布衣",s:"armor",lv:1,p:20,a:{def:5,hp:20}},
+ a_pi:{n:"皮甲",s:"armor",lv:2,p:180,a:{def:16,hp:60}},
+ a_seng:{n:"磐钟僧衣",s:"armor",lv:3,p:900,a:{def:34,hp:180}},
+ a_jin:{n:"缀云锦衣",s:"armor",lv:3,p:900,a:{def:22,hp:120,dodge:.05}},
+ a_han:{n:"寒铁鳞甲",s:"armor",lv:4,p:4200,a:{def:66,hp:400}},
+ a_tian:{n:"无缝之衣",s:"armor",lv:6,p:0,a:{def:120,hp:900,dodge:.06},d:"通身找不到一条线。穿上它，你会短暂地忘记自己叫什么。"},
+ b_cao:{n:"草鞋",s:"boots",lv:1,p:15,a:{spd:2}},
+ b_ma:{n:"麻底靴",s:"boots",lv:2,p:150,a:{spd:5,dodge:.02}},
+ b_lu:{n:"鹿皮靴",s:"boots",lv:3,p:800,a:{spd:10,dodge:.05}},
+ b_wu:{n:"无声履",s:"boots",lv:4,p:3600,a:{spd:18,dodge:.09}},
+ c_ping:{n:"平安符",s:"charm",lv:1,p:40,a:{yuan:1}},
+ c_yu:{n:"旧玉佩",s:"charm",lv:2,p:300,a:{yuan:2,hp:50}},
+ c_ling:{n:"铜铃",s:"charm",lv:3,p:1100,a:{spd:6,crit:.04}},
+ c_xian:{n:"缠线镯",s:"charm",lv:4,p:4000,a:{crit:.08,atk:20,weave:2}},
+};
+const SLOT={weapon:"兵器",armor:"衣甲",boots:"鞋履",charm:"随身"};
+
+/* ───────── 地点 ───────── */
+const LOC={
+ dukou:{n:"洛水渡口",x:0,y:0,d:"一条渡船，一个老船夫，十年没换过。水面上永远浮着一层看不清的东西。",ch:0,
+   acts:["herb","mine"],lv:0,to:["qingpu","duanhe"],npc:["dulao"]},
+ qingpu:{n:"青蒲镇",x:0,y:-1,d:"两条街，一口井，一个卖馄饨的。镇上人不问外乡人的来路。",ch:1,acts:["herb"],shop:1,lv:0.8,
+   to:["dukou","panshan","yunxiu"],npc:["pei"]},
+ duanhe:{n:"断河集",x:0,y:1,d:"洛水断流那七日之后长出来的集市。买卖的东西一半见不得光。",ch:1,acts:["herb","mine"],shop:1,lv:1.6,
+   to:["dukou","kuhe","tiezhen","jianzhong"],npc:[]},
+ panshan:{n:"磐钟山道",x:0,y:-2,d:"三千级石阶，每一级上都刻着一个字，连起来没人读得通。",ch:2,acts:["mine"],lv:2.6,
+   to:["qingpu","zhongfu"],npc:["hanshan"]},
+ yunxiu:{n:"云绣坊",x:-1,y:-1,d:"整条巷子都在响，是织机。夜里也响。",ch:2,acts:["silk"],shop:1,lv:2.6,
+   to:["qingpu"],npc:["heng"]},
+ kuhe:{n:"枯河谷",x:0,y:2,d:"河床干了十年，裂口深得能站进去一个人。",ch:3,acts:["mine","herb"],lv:3.8,
+   to:["duanhe","zhishi","wuying"],npc:[]},
+ tiezhen:{n:"铁砧堡",x:1,y:1,d:"堡墙是拿废兵器垒的。走近了能闻见铁锈和汗。",ch:3,acts:["mine"],shop:1,lv:3.8,
+   to:["duanhe"],npc:["zhuo"]},
+ jianzhong:{n:"剑冢野",x:-1,y:1,d:"几万柄断剑插在地里，像一片没长叶的林子。",ch:3,acts:["mine"],lv:4.8,
+   to:["duanhe","jianshen"],npc:[]},
+ wuying:{n:"无影林",x:0,y:3,d:"林子里没有影子。不是因为没有光。",ch:5,acts:["herb"],lv:6.2,
+   to:["kuhe","lie"],npc:["xie"]},
+ zhishi:{n:"织室",x:1,y:2,d:"在枯河底下。一间屋子，四壁是活的。",ch:6,acts:["silk"],lv:7.4,
+   to:["kuhe"],npc:["sang"]},
+ lie:{n:"裂",x:0,y:4,d:"你找不到词形容它。它也不需要词。",ch:8,acts:[],lv:8.6,
+   to:["wuying"],npc:[]},
+ zhongfu:{n:"钟腹",x:0,y:-3,d:"钟是空的，里面站得下人。壁上刻满了字，是从里面刻的。",ch:2,acts:["mine"],lv:3.4,
+   to:["panshan"],npc:[],hidden:1},
+ jianshen:{n:"剑冢深处",x:-2,y:1,d:"断剑在这里不是插着的，是堆着的。堆成一个人形，很高。",ch:3,acts:["mine"],lv:5.4,
+   to:["jianzhong"],npc:[],hidden:1},
+};
+const ACT={
+ sit:{n:"打坐",d:"行气周天，长内功修为。",tip:"内功"},
+ form:{n:"练招",d:"一招一式喂到肌肉里去。",tip:"招式"},
+ step:{n:"习步",d:"来回地走，走到不用想。",tip:"身法"},
+ herb:{n:"采药",d:"山野里翻药材，偶尔翻出别的。",tip:"药材"},
+ mine:{n:"采铁",d:"砂里淘铁，指甲缝一辈子洗不干净。",tip:"矿料"},
+ silk:{n:"缫丝",d:"坐在织机边上，手比脑子先学会。",tip:"织料"},
+ walk:{n:"游历",d:"漫无目的地走。江湖会自己找上来。",tip:"奇遇"},
+};
+/* ───────── 人物 ───────── */
+const NPC={
+ dulao:{n:"渡老",t:"洛水渡口的船夫",d:"撑了四十年船。他说他记得所有上过他船的人，除了你。"},
+ pei:{n:"裴无咎",t:"前捕头，现酒鬼",d:"七日梦那年他在验尸房里待了七天，出来之后就再没穿过官服。"},
+ heng:{n:"阿蘅",t:"缀云楼绣娘",d:"十七岁，手上有三十九个针孔。她说第四十个留给该留的人。"},
+ hanshan:{n:"释寒山",t:"磐钟寺敲钟人",d:"不是和尚，寺里也不让他受戒。他只负责敲钟，一天一百零八下。"},
+ zhuo:{n:"卓不弃",t:"铁砧堂铸匠",d:"左手只剩三根指头。他说剩下两根换了一把好刀，划算。"},
+ xie:{n:"谢无影",t:"？",d:"你见过他三次。三次他站的地方，都没有影子。"},
+ sang:{n:"桑照",t:"针娘",d:"白发。你在梦里见过她，比现实里年轻四十岁。"},
+};
+/* ───────── 敌人 ───────── */
+const FOE={
+ shuifei:{n:"水匪",lv:1,tr:0,ln:["抄起船桨就砸"],drop:[["sanqi",.5],["tiesha",.4]],sv:[8,20],k:0.83,ka:0.69},
+ poluo:{n:"泼皮",lv:2,tr:.8,drop:[["sanqi",.5]],sv:[14,30],k:0.45,ka:0.39},
+ jiaofu:{n:"脚夫刀客",lv:4,tr:2,drop:[["tiesha",.6],["canye",.06]],sv:[30,70],k:1.03,ka:0.73},
+ yeshou:{n:"崖下野狼",lv:5,tr:2.6,ln:["从侧面扑上来"],drop:[["xuejian",.3]],sv:[20,50],k:1.69,ka:1.07},
+ daoke:{n:"游方刀客",lv:7,tr:3.6,drop:[["hantie",.3],["canye",.1]],sv:[90,180],k:1.48,ka:0.91},
+ xiepai:{n:"邪派弟子",lv:9,tr:4.6,drop:[["canye",.15],["xuejian",.4]],sv:[160,320],k:1.71,ka:1.15},
+ wuyingzhe:{n:"无影者",lv:12,tr:6,ln:["出手的时候，你看不见手臂的中段"],drop:[["duanxian",.25],["canye",.3]],sv:[400,800],k:2.46,ka:0.72},
+ sishi:{n:"缝尸人",lv:15,tr:7.4,drop:[["yinxian",.6],["gujuan",.12]],sv:[900,1600],k:1.43,ka:0.4},
+ /* 剧情 */
+ b_shuifei:{n:"水匪头子·瘸六",lv:2,tr:.2,boss:1,ln:["拖着瘸腿抢上一步，砍刀直劈"],sv:[40,40],k:0.47,ka:0.99},
+ b_pan:{n:"执戒僧",lv:5,tr:.9,boss:1,ln:["禅杖横扫，招式极稳"],sv:[120,120],k:0.7,ka:1.18},
+ b_xie1:{n:"无影者·初见",lv:8,tr:1.9,boss:1,ln:["陷进墙里又从另一边探出来"],sv:[200,200],k:0.79,ka:1.2},
+ b_xie2:{n:"谢无影",lv:13,tr:6.3,boss:1,ln:["抬手，空气在他身后裂开一道细纹"],sv:[800,800],k:1.58,ka:1.15},
+ b_sang:{n:"针娘·桑照",lv:17,tr:7.6,boss:1,ln:["手腕一抖，三十六道银光同时落下"],sv:[2000,2000],k:0.95,ka:0.68},
+ b_lie:{n:"裂",lv:20,tr:8.8,boss:1,ln:["没有动作。你只是忽然少了一块"],sv:[0,0],k:1.45,ka:0.88},
+};
+/* ───────── 奇遇 ───────── */
+const EV=[
+ /* ── 各地专属：只在该地发生 ── */
+ {id:"L1",w:9,loc:["dukou"],t:"不肯上岸的客人",tx:["渡船靠了岸，船上还坐着一个人。斗笠压得很低。","渡老说这人已经坐了三天，船来船往，他不上岸也不给钱。","「你去问问，」渡老说，「我问过了，他说他在等一个摆渡的人，不是我。」"],
+  o:[{t:"问他等谁",f:s=>{addLog("他抬起头。斗笠底下什么也没有——不是黑，是没有。「等那个能把人送回去的。」他说，「不是送过河，是送回去。」","v");weave(s,1);gainExp(s,260);}},
+     {t:"掀了他的斗笠",f:s=>{if(rnd(1)<.5){addLog("斗笠落进水里。座位上空了。渡老回头看了一眼：「刚才有人吗？」","r");item(s,"duanxian",1);weave(s,1);}else{addLog("你的手穿了过去。他笑了一声，第一次抬眼看你：「你也一样。」","v");aff(s,"dulao",2);}}},
+     {t:"替他付了船钱",need:s=>s.silver>=30,f:s=>{s.silver-=30;addLog("渡老收了钱，摇摇头：「你付的是谁的？」再看时，座位是空的。","y");aff(s,"dulao",3);gain(s,"yuan",1);}}]},
+ {id:"L2",w:9,loc:["qingpu"],t:"井里的名字",tx:["青蒲镇当中那口井，井沿上密密麻麻刻满了名字，新的压着旧的。","打水的妇人说：「七日梦之后刻的。死在那七天里的人，家里人就来刻一个。」","「刻满了三圈。第四圈没人刻了——不是不死人了，是想不起来该刻谁。」"],
+  o:[{t:"数一数有多少个",f:s=>{addLog("你数到三百一十七就数乱了。再从头数，得的是另一个数。名字在动。","v");gain(s,"ling",1);weave(s,1);}},
+     {t:"找一找有没有自己的",f:s=>{addLog("你绕着井沿走了三圈。没有你的名字。你松了口气，随即发现自己不该松这口气。","r");gainExp(s,300);}},
+     {t:"刻一个上去",f:s=>{addLog("你刻了一个字，刚刻完就记不得刻的是什么了。井水映着你，映得很模糊。","v");weave(s,1);aff(s,"pei",2);}}]},
+ {id:"L3",w:9,loc:["duanhe"],t:"卖线的",tx:["集市最里头，一个人蹲着卖线。他面前铺了块黑布，布上摆着七截银线，长短不一。","「一寸一百文，」他说，「不讲价。这东西你买了也使不上，但你会想买。」","他说得对。你确实想买。"],
+  o:[{t:"买一寸（一百文）",need:s=>s.silver>=100,f:s=>{s.silver-=100;item(s,"yinxian",1);addLog("线很凉，凉得不像金属。他找钱的时候说：「第三个了。今天。都跟你一个眼神。」","y");weave(s,1);}},
+     {t:"问他线是哪来的",f:s=>{addLog("他收了布就走。走出五步回头说：「从嘴里。不是我的嘴。」","r");gain(s,"ling",1);}},
+     {t:"抢",f:s=>{fight(s,"poluo",()=>{addLog("你翻遍了他身上，一截线也没有。黑布里裹着的是三十七颗牙。","r");item(s,"duanxian",2);weave(s,-1);});}}]},
+ {id:"L4",w:9,loc:["panshan"],t:"读不通的字",tx:["三千级石阶，每级一个字。你试着从下往上读，读到第两百级，忽然觉得这不是一篇文章。","是一个人的名字。反复写了三千遍，每一遍都写坏了一点。"],
+  o:[{t:"一直读到顶",f:s=>{addLog("读到顶时天已经黑了。最后一级上没有字，只有一道凿痕，像是写到一半停了手。","v");gainExp(s,520);gain(s,"ling",1);weave(s,1);}},
+     {t:"去问释寒山",f:s=>{aff(s,"hanshan",3);addLog("「凿字的是我师父，」他说，「他凿了四十年，说凿到能把那个名字凿对，人就回来了。」他顿了顿，「没凿对。」","v");gainExp(s,300);}},
+     {t:"在旁边添一笔",f:s=>{addLog("你伸手在石上划了一道。指甲划过青石，竟留下了痕。那一级上的字忽然读通了。你立刻忘了它是什么。","r");weave(s,2);gain(s,"gu",1);}}]},
+ {id:"L5",w:9,loc:["yunxiu"],t:"自己在响的织机",tx:["夜里织机还在响。你循声进去，最里间那台机子前面没有人。","梭子在自己走。布上已经织出半幅人形，缺一张脸。"],
+  o:[{t:"看它织完",f:s=>{addLog("梭子织到脸的位置停住了，来回走了几趟，织出一片空白。然后它转过来，开始织你脚下的地。","r");weave(s,2);gainExp(s,480);}},
+     {t:"按住梭子",f:s=>{if(rnd(1)<.6){item(s,"cansi",3);addLog("梭子在你掌心挣了两下就不动了。布上的人形散开，变回一堆乱丝。","y");gain(s,"shi",1);}else{addLog("梭子从你手里穿了过去，你的掌心多了一道细缝，不出血。","r");weave(s,1);}}},
+     {t:"叫阿蘅来",f:s=>{aff(s,"heng",3);addLog("她来了，看了很久，说：「这台是我娘的。她死在七日梦里。」她伸手把梭子停了，手很稳，眼睛很红。","v");item(s,"bingcan",1);}}]},
+ {id:"L6",w:9,loc:["kuhe"],t:"裂口里的回声",tx:["河床上那道裂口深得看不见底。你对着它喊了一声。","回声上来了。不是你的声音。"],
+  o:[{t:"再喊一声",f:s=>{addLog("这次上来的是很多声音，一层压一层，像三千个人同时应了一句。都在说同一个字：缝。","v");weave(s,2);gainExp(s,600);}},
+     {t:"下去看看",f:s=>{if(rnd(1)<.5){item(s,"gujuan",1);addLog("裂口底下卡着一卷东西，纸都脆了，字还在。","g");}else{fight(s,"wuyingzhe",()=>{addLog("底下站着一个没有影子的人。他好像已经在那儿等了很久。","r");weave(s,1);});}}},
+     {t:"把耳朵贴上去",f:s=>{addLog("石头是温的。底下有规律的动静，一下，一下——是针穿过布的声音。","v");gain(s,"ling",2);weave(s,1);}}]},
+ {id:"L7",w:9,loc:["tiezhen"],t:"凉不下来的刀",tx:["淬火池边上搁着一把刀，从昨天烧到今天，浸了七次水，还是烫的。","卓不弃蹲在旁边抽烟：「它不认这池子的水。」"],
+  o:[{t:"伸手去握",f:s=>{addLog("烫。烫得你松不开手。松开的时候掌心一层水泡，刀凉了。卓不弃说：「它认人，不认水。」","r");gain(s,"gu",2);aff(s,"zhuo",3);}},
+     {t:"问他这刀什么来历",f:s=>{aff(s,"zhuo",2);addLog("「七日梦那年，堡里死了十九个。这刀是拿他们的兵器熔的。」他弹了弹烟灰，「十九个人的火，一池水压不住。」","v");gainExp(s,400);}},
+     {t:"帮他再淬一次",f:s=>{if(rnd(1)<.45){gearGain(s,"w_han");addLog("这一次它凉了。卓不弃看了你半晌，把刀推过来：「它凉在你手里，那就是你的。」","g");aff(s,"zhuo",4);}else{item(s,"hantie",3);addLog("还是烫。卓不弃叹气：「算了，留着当个念想。」他给了你几块寒铁。","y");}}}]},
+ {id:"L8",w:9,loc:["jianzhong"],t:"叫得出名字的剑",tx:["几万柄断剑里，有一柄在响。不是风。","你走过去，它响得更急。剑身上有一行锈死的小字，你擦了半天才认出来——是你的名字。"],
+  o:[{t:"拔出来",f:s=>{if(rnd(1)<.5){gearGain(s,"w_qing");addLog("剑断了半截，握着却很顺手，像用了很多年。你不记得用过。","g");weave(s,1);}else{addLog("剑一拔就碎了，碎成一地锈。锈里没有铁，是干掉的线。","r");item(s,"duanxian",2);weave(s,1);}}},
+     {t:"把土埋回去",f:s=>{addLog("你把它埋了回去，拍实。走出很远还听得见它在响，声音越来越小，像有人慢慢不叫了。","v");gain(s,"yuan",2);gainExp(s,450);}},
+     {t:"找找有没有别人的名字",f:s=>{addLog("你翻了两个时辰。找到了裴无咎的，找到了阿蘅的，找到了渡老的。每一柄都断在同一个地方。","r");weave(s,2);gain(s,"ling",1);}}]},
+ {id:"L9",w:10,loc:["wuying"],t:"你的影子落在了后面",tx:["进林子的时候你回头看了一眼。影子还在林子外面，站着没跟进来。","它没有动。它在等你出去。"],
+  o:[{t:"招手叫它",f:s=>{addLog("它抬了抬手，动作和你差半拍。半拍之后它放下手，转身走了——往你来的方向。","r");weave(s,-1);gain(s,"shi",2);}},
+     {t:"不管它，往里走",f:s=>{addLog("越往里走越轻。走到林心你低头，发现自己脚下干干净净，和这林子里所有东西一样。","v");weave(s,2);gainExp(s,900);}},
+     {t:"退出去和它合上",f:s=>{addLog("你退出林子。影子重新贴回脚下。贴得不太对——它比你矮了一寸。","v");gain(s,"gu",1);gain(s,"yuan",1);}}]},
+ {id:"L10",w:10,loc:["zhishi"],t:"四壁是活的",tx:["织室的墙不是墙，是绷紧的布，一直在极缓慢地起伏。","靠近了能看见布纹里嵌着东西：一只手，一张侧脸，一段背影。都很安静。"],
+  o:[{t:"认一认里面有谁",f:s=>{addLog("你认出了三个。都是这十年里你听说过死了的人。他们没有闭眼，也不像难受。","v");weave(s,1);gain(s,"ling",2);}},
+     {t:"伸手摸墙",f:s=>{addLog("布是温的，隔着布有脉搏。你的手陷进去一寸，有什么在里面轻轻回握了一下。","r");weave(s,2);gainExp(s,1200);}},
+     {t:"什么也不做，坐下",f:s=>{addLog("你在屋子当中坐了一个时辰。四壁起伏的节奏慢慢和你的呼吸对上了。你忽然很想睡。","v");gainExp(s,1600);gain(s,"mai",1);}}]},
+ {id:"e1",w:10,t:"卖伞的",tx:["雨还没下，路口已经站了个卖伞的。他一把伞也没卖出去，却不肯走。","「你买不买？」他问，「不买也行，站着陪我等会儿雨。」"],
+  o:[{t:"买一把（十二文）",need:s=>s.silver>=12,f:s=>{s.silver-=12;addLog("你买了把油纸伞。半个时辰后，真下起雨来了。","y");gain(s,"yuan",1);}},
+     {t:"陪他站着",f:s=>{addLog("你陪他站了一炷香。雨没下。他说：「那就明天。」","");gainExp(s,80);}},
+     {t:"走开",f:s=>{addLog("你走开了。走出二十步，背后传来一声闷雷。","");}}]},
+ {id:"e2",w:9,t:"石缝里的东西",tx:["路边一块青石裂了道缝，缝里卡着什么，反着一点光。"],
+  o:[{t:"伸手去掏",f:s=>{if(rnd(1)<.55){item(s,"canye",1);addLog("是半页发霉的册子，字还认得出。","y");}else{addLog("是块碎瓷。你的手被割了一道。","r");}}},
+     {t:"用石头砸开",f:s=>{item(s,pick(["hantie","tiesha","xuejian"]),ri(1,3));addLog("石头裂开，里面的东西滚了出来。","g");}}]},
+ {id:"e3",w:8,t:"馄饨摊",tx:["「一碗六文，加辣不要钱。」摊主一边说一边看你腰上的兵器。","「吃完了别在我这儿打架。上回打完，我半个月没生意。」"],
+  o:[{t:"吃一碗（六文）",need:s=>s.silver>=6,f:s=>{s.silver-=6;s.hpPct=1;addLog("热汤下肚，旧伤舒服了不少。气血尽复。","g");}},
+     {t:"问他七日梦的事",f:s=>{addLog("摊主沉默了一会儿：「那七天我天天做梦。梦见有人在缝我的嘴。」","v");flag(s,"ask_dream");gainExp(s,120);}}]},
+ {id:"e4",w:7,t:"讨债的",tx:["三个人围着一个跪在地上的老头。老头抱着一个包袱不撒手。"],
+  o:[{t:"插手",f:s=>{fight(s,"poluo",()=>{addLog("老头把包袱塞给你就跑了。里头是一双没穿过的鞋。","y");gearGain(s,"b_ma");gain(s,"yuan",1);});}},
+     {t:"看着",f:s=>{addLog("你看着他们走了。老头还跪在那儿。你记住了他的脸。","");gain(s,"shi",1);}},
+     {t:"绕路",f:s=>{addLog("你绕了。这条路你以后不会再走。","");}}]},
+ {id:"e5",w:6,t:"一寸银线",tx:["路边的草丛里躺着个人，脸朝上，身上一处伤也没有。","你掰开他的嘴，里面有一根银线，一寸整，两头齐。"],
+  o:[{t:"取走",f:s=>{item(s,"yinxian",1);addLog("银线在你手里很凉。你忽然很想把它咽下去。","v");flag(s,"got_thread");weave(s,1);}},
+     {t:"埋了他",f:s=>{addLog("你挖了个坑。填土的时候，你听见土下面有极细的一声，像丝被抽紧。","v");gain(s,"yuan",2);}}]},
+ {id:"e6",w:7,t:"练武的孩子",tx:["一个十来岁的孩子在河滩上一遍遍打同一招，姿势全错。","「你打得不对。」你说。他停下来看你，眼神不服。"],
+  o:[{t:"教他",f:s=>{addLog("你把那招拆开来教了三遍。他学会了。走的时候他没道谢，但鞠了个躬。","g");gain(s,"ling",1);}},
+     {t:"打给他看",f:s=>{addLog("你一招过去，他摔在沙地上，半天爬不起来。他说：「再来。」","");artExp(s,s.eq.form[0],200);}}]},
+ {id:"e7",w:5,t:"黑市",tx:["巷子尽头有人靠墙站着，脚边一块布，布上摆着七八样东西。","「不问来路，不问去处。」"],
+  o:[{t:"买一件（八十文）",need:s=>s.silver>=80,f:s=>{s.silver-=80;const g=pick(["w_liu","a_pi","b_ma","c_ping"]);gearGain(s,g);addLog("你买下了"+GEAR[g].n+"。","y");}},
+     {t:"买那个盖着布的（三百文）",need:s=>s.silver>=300,f:s=>{s.silver-=300;if(rnd(1)<.4){item(s,"gujuan",1);addLog("布掀开，是一卷完整的古卷。摊主脸色变了变。","y");}else{item(s,"canye",2);addLog("两张残页。摊主耸耸肩。","");}}},
+     {t:"不买",f:s=>{addLog("「不买就别看。」他把布收了。","");}}]},
+ {id:"e8",w:6,t:"钟声",tx:["磐钟寺的钟声顺着风过来，一下，又一下。","你不由自主停下脚步，数到第一百零八下，声音停了。"],
+  o:[{t:"就地打坐",f:s=>{gainExp(s,Math.floor(200+s.lvl*90));addLog("借着钟声调息一周天，内力涨了一线。","g");}},
+     {t:"循声上山",f:s=>{addLog("你往山上走了半日，钟楼却始终在前面。天黑时你回到了原地。","v");gain(s,"ling",1);}}]},
+ {id:"e9",w:5,t:"没有影子的人",need:s=>s.ch>=4,tx:["日头正毒。对面走来一个人，脚下一片干净。","他走过你身边，微微点头，像是认得你。"],
+  o:[{t:"跟上去",f:s=>{fight(s,"wuyingzhe",()=>{addLog("它倒下的时候，从衣服里散出来的不是血，是线。","v");weave(s,1);});}},
+     {t:"装作没看见",f:s=>{addLog("你低下头。走出十几步，你才敢回头——他站在原地，正看着你。","r");weave(s,-1);}}]},
+ {id:"e10",w:6,t:"打铁的",tx:["炉子开着，人不在。砧上摆着一柄刚淬完火的刀，还在响。"],
+  o:[{t:"等主人回来",f:s=>{addLog("卓不弃拎着一壶酒回来，看了你一眼：「有耐心。」他给你添了两块寒铁。","g");item(s,"hantie",2);aff(s,"zhuo",6);}},
+     {t:"拿走刀",f:s=>{gearGain(s,"w_han");addLog("你拿了刀就走。三天后你在集上听说，铁砧堂在找一个拿刀的人。","r");flag(s,"stole_blade");weave(s,-1);}}]},
+ {id:"e11",w:6,t:"酒鬼",tx:["一个人躺在酒肆门口，衣服还是旧官服的样式，只是没了补子。","「验了三千一十七具尸。」他冲天说，「一具伤都没有。你说人怎么会那么死？」"],
+  o:[{t:"扶他起来",f:s=>{aff(s,"pei",8);addLog("你把裴无咎扶进屋。他抓着你的袖子说了半宿的胡话，有几句你记住了。","g");gainExp(s,220);}},
+     {t:"买壶酒陪他（四十五文）",need:s=>s.silver>=45,f:s=>{s.silver-=45;aff(s,"pei",14);item(s,"wuwei",1);addLog("你们喝到天亮。他说：「银线是从里头往外缝的。你懂吗？从里头。」","v");flag(s,"pei_hint");}}]},
+ {id:"e12",w:5,t:"绣坊夜话",tx:["织机响了一夜。一个绣娘抱着灯坐在门槛上，手指头上全是针孔。","「白天绣花，晚上绣别的。」她笑了一下，「你别问。」"],
+  o:[{t:"陪她坐一会儿",f:s=>{aff(s,"heng",8);addLog("阿蘅没再说话。天亮时她塞给你一个荷包，针脚细得看不出接头。","g");item(s,"hebao",1);}},
+     {t:"问她绣什么",f:s=>{aff(s,"heng",3);addLog("「绣人。」她说，「把散了的人缝回去。」她自己也愣了一下，「——我为什么这么说？」","v");weave(s,1);}}]},
+ {id:"e13",w:4,t:"断剑",need:s=>s.ch>=3,tx:["剑冢野上风很大。有一柄剑在地里叫。"],
+  o:[{t:"拔出来",f:s=>{if(rnd(1)<.5){gearGain(s,"w_qing");addLog("剑身只剩一尺，断口却极锋利。","y");}else{addLog("剑一拔就碎了。你手心多了一道口子。","r");}}},
+     {t:"就地练剑",f:s=>{artExp(s,"mangci",600);addLog("你在剑林里练了一整天。四周的断剑随着你的动作轻轻发颤。","g");}}]},
+ {id:"e14",w:6,t:"渡河",tx:["渡老在船头抽烟。「上来吧。」他说，「钱就算了，你陪我说说话。」"],
+  o:[{t:"问他十年前的事",f:s=>{aff(s,"dulao",6);addLog("「那七天水没了，河床上全是人。」他吐了口烟，「有的在挖，有的在跪。你？你在睡。」","v");flag(s,"du_hint");}},
+     {t:"问他为什么不收钱",f:s=>{aff(s,"dulao",4);addLog("「你上过我的船。」他说，「四十年，只有你一个，我记不住脸。」","v");}}]},
+ {id:"e15",w:5,t:"荒庙",tx:["庙塌了一半，神像的脸被人凿掉了。供桌上却有新鲜的供品。"],
+  o:[{t:"搜一搜",f:s=>{s.silver+=ri(40,160);item(s,pick(["canye","xuejian","wangyou"]),1);addLog("你在神像背后摸出个布包。","g");}},
+     {t:"上柱香",f:s=>{gain(s,"yuan",2);addLog("你上了香。烟直直地往上走，没有散。","y");}},
+     {t:"在此过夜",f:s=>{if(rnd(1)<.5){fight(s,"xiepai");}else{gainExp(s,400);addLog("一夜无事。天亮时供桌上又多了一碗新米。","v");}}}]},
+ {id:"e16",w:5,t:"比武",tx:["镇口围了一圈人。中间站着个提刀的，脚边扔着三个人。","「还有谁？」"],
+  o:[{t:"上",f:s=>{fight(s,"daoke",()=>{s.silver+=ri(120,300);gain(s,"shi",1);addLog("你赢了。围观的人把彩头凑给你。","y");});}},
+     {t:"劝架",f:s=>{if(s.at.yuan>=12){addLog("你说了几句，那人竟收了刀，抱拳走了。围观的人看你的眼神变了。","g");gain(s,"yuan",2);}else{addLog("「滚。」他说。你滚了。","");}}}]},
+ {id:"e17",w:4,t:"梦",need:s=>s.ch>=3,tx:["你睡着了。","梦里是一条干涸的河床。河床中央坐着一个白发女人，低头缝着什么。","她缝得很慢，很稳。线是银的，看不出接头。","她没抬头，只说了一句：「你这一线，还在外面。」"],
+  o:[{t:"问她在缝什么",f:s=>{addLog("她说：「缝一个破了的地方。」你醒了，枕头上有一根银线。","v");item(s,"yinxian",1);weave(s,1);flag(s,"dream2");}},
+     {t:"伸手去碰那块布",f:s=>{addLog("布是暖的，像皮肤。你的指尖陷了进去。醒来时指甲缝里全是血，不是你的。","r");weave(s,2);gainExp(s,900);}}]},
+ {id:"e18",w:5,t:"药农",tx:["一个背竹篓的老妇在崖边采药，脚下就是几十丈。"],
+  o:[{t:"帮她采",f:s=>{item(s,"xuejian",ri(2,4));item(s,"wangyou",ri(1,3));addLog("她把最好的两株塞给你：「这个别卖，留着。」","g");}},
+     {t:"问路",f:s=>{addLog("她给你指了条近路。近路上有狼。","");fight(s,"yeshou");}}]},
+ {id:"e19",w:4,t:"抄家",tx:["一座大宅，门敞着，里头一个人也没有。桌上的饭还温着。"],
+  o:[{t:"进去",f:s=>{if(rnd(1)<.45){s.silver+=ri(200,600);addLog("你在床底下找到一个钱匣。","g");}else{fight(s,"xiepai",()=>{addLog("屋里等着的人不止一个。你赢了。","y");});}}},
+     {t:"报官",f:s=>{addLog("官府来人看了一眼就走了：「这月第七家。」","v");gainExp(s,300);flag(s,"vanish");}}]},
+ {id:"e20",w:3,t:"卖艺的老人",tx:["老人耍了一套拳，围观的人笑他慢。收摊时他看了你一眼。","「你也笑？」他问。「那你来。」"],
+  o:[{t:"接他一招",f:s=>{addLog("你接了。你的手臂麻了整整一天。老人走前留下一句：「慢的不是拳，是你。」","y");gain(s,"ling",2);artExp(s,"wuxiangchai",800);learn(s,"wuxiangchai");}},
+     {t:"作揖告辞",f:s=>{addLog("老人点点头：「懂事。」他给了你一张残页。","g");item(s,"canye",2);}}]},
+];
+
+/* ═══════════ 主线 ═══════════ */
+const CHAP=[
+ {n:"第一章 · 渡口无名",at:"c1a",r:0,d:"你在一条船上醒来，不记得自己是谁。"},
+ {n:"第二章 · 择一条路走",at:"c2a",r:1,d:"江湖不收没有出身的人。"},
+ {n:"第三章 · 断线的人",at:"c3a",r:2,d:"死人身上没有伤，嘴里有线。"},
+ {n:"第四章 · 旧梦重织",at:"c4a",r:3,d:"她在梦里说：你这一线，还在外面。"},
+ {n:"第五章 · 河底下的屋子",at:"c5a",r:4,d:"洛水断流的那七日，底下露出过什么。"},
+ {n:"第六章 · 三千人的债",at:"c6a",r:5,d:"不是杀。是取线。"},
+ {n:"第七章 · 无影者",at:"c7a",r:6,d:"从裂里出来的东西，学得很快。"},
+ {n:"第八章 · 针娘",at:"c8a",r:7,d:"最后一任司针，快缝不动了。"},
+ {n:"第九章 · 一线之外",at:"c9a",r:8,d:"你为什么杀不死。"},
+ {n:"终章 · 天衣",at:"c10a",r:8,d:"缝、断、织。你只能选一个。"},
+];
+const SC={
+/* ── 一 ── */
+c1a:{t:"渡口无名",p:["你是被水声弄醒的。",
+ "船板很硬，背上硌着一处凸起。天光是灰的，分不清早晚。你想坐起来，胳膊却不听使唤——不是没力气，是像很久没用过。",
+ "你低头看自己的手。腕子内侧有一道极细的白痕，横着，一针一针，像被人缝过又拆了。",
+ "船尾有人咳嗽。"],to:"c1b"},
+c1b:{who:"渡老",p:["「醒了。」撑船的老人没回头，「你睡了三天。」",
+ "你张口，发现自己说得出话，只是不知道该说什么。你不记得自己叫什么。",
+ "「不记得了？」老人这才转过身来，眯着眼把你从头看到脚，看得很久。「也是。十年前那七天，忘事的人多了去了。」",
+ "「十年前？」",
+ "「洛水断流七日。」他把烟锅在船帮上磕了磕，「天底下会武功的，都做了同一个梦。第七天夜里河又通了，三千零一十七个高手死在床上，一点伤都没有。仵作在他们嘴里，一人挖出一根一寸长的银线。」",
+ "他顿了顿。",
+ "「江湖管那七天叫七日梦。管梦里那个女人，叫针娘。」"],
+ o:[{t:"「我也做了那个梦？」",to:"c1c"},{t:"「你认得我？」",to:"c1c",f:s=>flag(s,"asked_who")}]},
+c1c:{who:"渡老",p:["老人摇头。",
+ "「我撑了四十年船，上过我船的人，我一个都记得住。」他看着你，眼神里有种说不出的东西，「只有你，我记不住。今天记得，明天就忘。这是第几回了——我数不清。」",
+ "他把船靠上渡口的木桩。",
+ "「上岸吧。你得有个名字。没名字的人在江湖上活不长，人家连怎么恨你都不知道。」"],
+ f:s=>{aff(s,"dulao",5);},to:"c1d"},
+c1d:{t:"水匪",p:["岸上的芦苇动了动。",
+ "四五个人从苇丛里钻出来，手里提着桨、砍刀和一截生锈的铁链。为首的是个瘸子，拖着左腿，笑得很和气。",
+ "「渡老，今儿捞着人了？」瘸六冲你抬抬下巴，「小子，身上有几个钱？没有也行，衣服留下。」",
+ "你身上确实没有钱。但你发现，自己的手已经握成了拳——不是你想握的。是它自己知道该怎么握。"],
+ b:{foe:"b_shuifei",win:"c1e"}},
+c1e:{p:["瘸六趴在泥里，半天爬不起来。他抬头看你的眼神，从轻慢变成了别的什么。",
+ "「你……你哪个门派的？」",
+ "你不知道。你只知道刚才那一拳出去的时候，胳膊里有条路，是现成的。",
+ "渡老在船上看着，很久没说话。末了他说：「你这身手，不像忘了十年的人。」",
+ "「像什么？」",
+ "「像刚拆了线的伤口。」"],
+ f:s=>{unlock(s,"qingpu");unlock(s,"duanhe");s.silver+=40;learn(s,"yelu");learn(s,"tuna");learn(s,"xinglu");},
+ o:[{t:"给自己起个名字，上岸",to:"@name"}]},
+/* ── 二 ── */
+c2a:{t:"择一条路走",p:["青蒲镇上人人都问你一句话：你是哪一路的。",
+ "你答不上来。答不上来的人买不到药，住不进店，在集上问个路都要被人多看两眼。江湖不是不收生人，是不收没有出处的人——没有出处，就没人替你担保，也没人替你收尸。",
+ "断河集的茶棚里，一个跑江湖的给你数了数如今还立得住的几家。",
+ "「十年前那三千人一死，老的规矩全塌了。现在站得住的，也就这么几家。你挑吧。挑了就别回头——江湖上改门换派的人，两边都不认。」"],
+ o:[{t:"听他细说",to:"@sect"}]},
+c2b:{p:["你按规矩递了拜帖，磕了该磕的头，说了该说的话。",
+ "从今天起，你在江湖上有了出处。这意味着有人会为你担保，也意味着你欠了债——欠的不是钱，是以后总有一天要还的那种。",
+ "夜里你睡在门派给的铺位上，第一次觉得踏实。",
+ "然后你又梦见了那条干河床。"],
+ f:s=>{unlock(s,"panshan");unlock(s,"yunxiu");},to:null},
+/* ── 三 ── */
+c3a:{t:"断线的人",p:["最近三个月，死了十一个人。",
+ "都是有功夫在身的，都死在自己屋里，都没有伤。青蒲镇的仵作验到第四具就不肯再验了，说验不动。",
+ "断河集的酒肆里，一个穿旧官服的醉汉听见你打听这事，忽然从桌上抬起头。",
+ "「你也在查？」"],to:"c3b"},
+c3b:{who:"裴无咎",p:["他自称裴无咎，十年前是洛水三县的捕头。",
+ "「七日梦那年，三千一十七具尸，我验了七天。」他给自己倒酒，手很稳，稳得不像喝了这么多，「每一具都干净。没有外伤，没有内伤，经脉完整，五脏俱全。人就是没了。」",
+ "「嘴里的银线呢？」",
+ "「一寸整。两头齐。」他比了个长度，「你知道最邪门的是什么吗？不是没有接头——是那线有方向。」",
+ "他用指甲在桌上划了一道。",
+ "「它是从里头往外缝的。从人的里面，往外面缝。」",
+ "「缝什么？」",
+ "「不知道。」他仰头喝干，「但缝东西的人，总是在补什么。我干了二十年捕快，只学会一件事：想知道谁干的，先想清楚他想补什么。」"],
+ f:s=>{aff(s,"pei",10);flag(s,"pei_case");},to:"c3c"},
+c3c:{p:["第十二个死者是个镖师，住在镇西。",
+ "你到的时候尸体还没凉。屋子锁得好好的，窗闩从里面插着。他躺在床上，睁着眼，脸上没有惊恐，反而有种说不上来的舒展。",
+ "你掰开他的嘴。银线躺在舌根上，一寸整。",
+ "你把线捏在指间。",
+ "很凉。凉得不像金属。它在你指尖轻轻地动了一下——不是你手在抖。"],
+ f:s=>{item(s,"yinxian",1);weave(s,1);},
+ o:[{t:"把线收起来",to:"c3d",f:s=>flag(s,"keep_thread")},
+    {t:"当场烧掉它",to:"c3d",f:s=>{flag(s,"burn_thread");addLog("火苗舔上银线，线没断，反而更亮了一点。","r");}}]},
+c3d:{p:["你从窗缝往外看的时候，街对面站着一个人。",
+ "青天白日，他脚下没有影子。",
+ "他看了你一会儿，微微点头，像是认得你，然后转身走进巷子。",
+ "你追出去。巷子是死的，三面墙。"],
+ b:{foe:"b_xie1",win:"c3e"}},
+c3e:{p:["他退到墙根，笑了一下。那个笑容很奇怪——不是装的，是不熟练，像刚学会怎么笑。",
+ "「你比上一个耐打。」他说，声音也不熟练，「上一个只撑了三招。」",
+ "「上一个是谁？」",
+ "「都是你。」",
+ "他往后一靠，整个人陷进墙里，像布被人从背面拽走。墙面上什么都没留下。",
+ "你站在死巷里站了很久。"],
+ f:s=>{unlock(s,"kuhe");unlock(s,"tiezhen");unlock(s,"jianzhong");weave(s,1);item(s,"duanxian",1);},to:null},
+/* ── 四 ── */
+c4a:{t:"旧梦重织",p:["这一次你知道自己在做梦。",
+ "干涸的河床一直铺到天边。裂口深得能站进去一个人。河床中央坐着一个白发女人，膝上摊着一大块布——你看不清那布是什么颜色，因为它一直在变，变的方式像天光在云底下跑。",
+ "她手里的针没有孔。",
+ "她一针一针地缝，很慢，很稳。每落一针，远处就有一个很轻的声音，像有人在极远的地方叹了口气。",
+ "「你这一线，还在外面。」她说，没有抬头。"],
+ o:[{t:"「什么线？」",to:"c4b"},{t:"「你杀了三千人。」",to:"c4b",f:s=>flag(s,"accuse")}]},
+c4b:{who:"针娘",p:["她终于抬起头。",
+ "她的脸很年轻，白发却像雪。眼睛里没有恶意，也没有善意，只有一种极长的疲倦。",
+ "「你以为内力是什么？」她说，「是气？是血？」",
+ "她把针举起来，针尖上什么都没有，可你分明看见一条极细的银线从空中垂下来，另一头连着你的胸口。",
+ "「是线。」她说，「每一个练武的人，都是天衣上的一个线头。你们练得越深，扎得越紧。整块布——我们叫它天衣——裹着这个世上所有活着的东西。」",
+ "「布破了。」",
+ "「破在十年前？」",
+ "「破在很久以前。」她低下头，继续缝，「十年前，只是我第一次补它。」"],
+ f:s=>{weave(s,2);flag(s,"knows_tianyi");},to:"c4c"},
+c4c:{p:["你醒了。",
+ "枕头上有一根银线，一寸整。",
+ "窗外天刚亮，云绣坊的织机已经在响。你想起阿蘅那天晚上说的话——她说她绣的是人，把散了的人缝回去，然后她自己愣了一下，说：我为什么这么说？",
+ "你去找她。"],f:s=>item(s,"yinxian",1),to:"c4d"},
+c4d:{who:"阿蘅",p:["阿蘅在织机前坐了一夜，眼下青着。",
+ "你把银线放在她手心里。她只看了一眼，脸就白了。",
+ "「这是双股。」她说。",
+ "「什么？」",
+ "「绣活上的话。一根线看着是一根，其实是两股拧的。」她把线举到光里，手在抖，「可这根不是拧的。它是一股，中间被人硬劈开又并回去的——你知道要多稳的手才能把一根线劈开还不断？」",
+ "她把线还给你，像还一块烧红的铁。",
+ "「楼里有个老规矩。」她说，「从不外传。第一任楼主留下的：绣人像时，眼睛最后绣，绣完立刻挑断线头。」",
+ "「为什么？」",
+ "「因为不挑断，」阿蘅说，「绣的那个人会醒。」"],
+ f:s=>{aff(s,"heng",12);flag(s,"heng_ally");},to:null},
+/* ── 五 ── */
+c5a:{t:"河底下的屋子",p:["裴无咎摊开一张图，是他偷偷临下来的旧河道图。",
+ "「十年前断流那七天，河床全露出来了。」他用酒指在图上点了一处，「这儿，本来在水底三十丈。当时下去过一队人，八个，回来两个，回来的那两个不说话，三个月后自己吊死了。」",
+ "「他们看见什么？」",
+ "「留了句话。」裴无咎抬头看你，「他们说：底下有间屋子，墙是活的。」",
+ "枯河谷的裂口一年比一年深。你顺着一道裂缝往下走，走了大半天，光变成了另一种颜色——不是暗，是稀薄，像光本身被抽掉了几股。",
+ "然后你看见了那扇门。"],to:"c5b"},
+c5b:{p:["门后是一间屋子，方的，不大。",
+ "四壁挂满了布。",
+ "那些布都在动。不是被风吹的——它们在自己起伏，像是很多人在同时呼吸。每一块布上都有针脚，密密麻麻，有的整齐得吓人，有的歪歪扭扭，一看就是新手活。",
+ "屋子中央有一张空椅子，椅子边上放着一个笸箩。笸箩里堆满了银线，每一根都是一寸整。",
+ "你数了数最上面那一层。",
+ "你不敢往下数。"],
+ f:s=>{unlock(s,"zhishi");weave(s,2);},to:"c5c"},
+c5c:{p:["墙上钉着一本册子，纸已经脆了。你翻开，第一页是一列名字，后面跟着年份。",
+ "名字很多，往下排了几十行。每一个名字后面都有两个数字：接任的年份，和断线的年份。",
+ "最后一行只有一个名字——桑照——后面的年份栏是空的。",
+ "再往下，还有半行墨迹，被人用力划掉了，划得纸都破了。你把册子举到光里，勉强认出那半行被划掉的字里，有一个字的偏旁，和你自己的姓一样。",
+ "册子的封皮上，四个字：",
+ "「缝天司·籍」"],
+ f:s=>{item(s,"tuben",1);flag(s,"saw_roster");},to:null},
+/* ── 六 ── */
+c6a:{t:"三千人的债",p:["裴无咎把拓本翻到最后一页，翻了三遍，然后放下，去倒酒。酒洒了一半。",
+ "「三千零一十七。」他说。",
+ "「你想说什么？」",
+ "「我一直以为那是屠杀。」他终于把酒倒满，「现在我知道不是了。是取料。」",
+ "他把杯子推给你。",
+ "「布破了，要补。补要线。线从哪儿来？」他自问自答，「从人身上来。练武的人身上那股气——那就是现成的线，又长又韧。三千人，能纺出多少？够补多大一块口子？」",
+ "「所以她挑的都是高手。」",
+ "「所以她挑的都是高手。」裴无咎笑了一下，笑得很难看，「省得多杀几万个平头百姓。少侠，你说这算什么？」"],to:"c6b"},
+c6b:{p:["你没有回答。",
+ "你想起十一具尸体脸上那种舒展。想起那根线在你指间动的那一下。想起阿蘅说的：不挑断线头，绣的那个人会醒。",
+ "你也想起，屋子里那些墙上的布，在呼吸。",
+ "「裂在哪儿？」你问。",
+ "「无影林。」裴无咎说，「最近三年，那林子里没有影子。不是没有光，是影子进去了，出不来。林子中间有个地方——去过的人说，那儿不像破了个洞，倒像是有一处，布被人从两边拉开了，中间露出底下的东西。」",
+ "「底下是什么？」",
+ "裴无咎沉默了很久。",
+ "「没有东西。」他说，「不是空的那种没有。是根本没有过的那种没有。」"],
+ f:s=>{unlock(s,"wuying");learn(s,"fengxi");flag(s,"know_lie");},to:"c6c"},
+c6c:{p:["那天夜里，你第一次主动去试。",
+ "你调息，把内力压到一线，细得不能再细，然后按着梦里她运针的路子，往前送。",
+ "你的指尖点进空气里一处什么都没有的地方。",
+ "布帛被挑开的轻响。",
+ "你面前的空气裂了一道口子，只有半寸，里面是——你看了一眼就把它合上了，用了全身的力气。",
+ "你吐出一口血。血是凉的。"],
+ f:s=>{artExp(s,"fengxi",3000);weave(s,3);},to:null},
+/* ── 七 ── */
+c7a:{t:"无影者",p:["它们开始往外走了。",
+ "先是断河集，一夜之间空了三户人家，饭还温着。然后是青蒲镇。然后是磐钟寺的山道上，执戒僧发现有个师弟在正午的阳光下站着，脚底下干干净净。",
+ "释寒山那天敲钟敲了两百多下才停。他说：「钟能压住不该醒的东西。可我今天敲的时候，钟里有回声，那回声比我快。」",
+ "无影林边上，你等到了他。"],
+ f:s=>aff(s,"hanshan",8),to:"c7b"},
+c7b:{who:"谢无影",p:["「你这次来得快。」谢无影说。这一回他的笑容熟练多了。",
+ "「上一次我用了多久？」",
+ "「一百三十七年。」",
+ "你站着没动。",
+ "「你不信。」他很温和，「也对。我第一次跟你说这句话的时候你也不信。」他抬起手，看着自己的掌心，「我是从裂里出来的。裂里没有东西，所以出来的东西也没有东西——我没有名字，没有过去，没有影子。我只能学。学你们怎么说话，怎么笑，怎么恨。」",
+ "「学来做什么？」",
+ "「做人。」他说，「只有做成了人，才能被缝进去。缝进去，就有了。」",
+ "他的声音第一次有了温度：",
+ "「你以为我们是来毁天衣的？我们是来求她收下我们的。她不肯。她说我们不是线，是灰。」"],to:"c7c"},
+c7c:{p:["「那你杀那些人做什么？」",
+ "「不是我杀的。」谢无影摇头，「那是她取线。我做的事不一样——」",
+ "他向前走了一步。空气在他身后拖出一道很细的裂纹。",
+ "「我在把口子拉大。口子越大，她越缝不完；缝不完，她就得取更多的线；取到最后，她会取光所有练武的人。到那时候整块布都是新线，旧的花样全没了——」",
+ "「——从头织一遍的时候，她就不得不把我们也织进去。」",
+ "他笑了。这一次的笑，完全是人的。",
+ "「三千人算什么。为了有，我等了一百三十七年。」"],
+ b:{foe:"b_xie2",win:"c7d"}},
+c7d:{p:["他跪下去的时候散得很慢。",
+ "不是血，是线。一根一根从他衣缝里松出来，在地上散成一小堆，然后连那堆也没有了。",
+ "最后剩下的那一根，他自己捏在手里，递向你。",
+ "「拿着。」他说，「我这一百三十七年，只攒下这一根。」",
+ "你接了。",
+ "「为什么给我？」",
+ "「因为你和我一样。」他看着你，眼睛已经开始淡了，「你身上也没有接头。你从来就不在布上。」",
+ "然后他就没有了。",
+ "不是死了。是从来没有过。"],
+ f:s=>{item(s,"duanxian",3);weave(s,-2);learn(s,"wuying");flag(s,"xie_dead");},to:null},
+/* ── 八 ── */
+c8a:{t:"针娘",p:["织室的门这一次是开着的。",
+ "椅子上坐着一个白发女人。她比梦里老。老得多。",
+ "膝上摊着那块布。近看你才发现，布上有一处地方，针脚乱得不成样子——密密叠叠，补了又补，颜色比周围深了几层，像一块反复结痂的伤口。",
+ "「你来了。」桑照说，「比我算的早三年。」"],to:"c8b"},
+c8b:{who:"桑照",p:["「我叫桑照。缝天司第四十一任司针。」她说，「也是最后一任。」",
+ "「你杀了三千人。」",
+ "「三千零一十七。」她纠正，声音很平，「我记得每一个名字。我每天缝之前念一遍，念了十年。你要听吗？我可以从头念。」",
+ "你没有说话。",
+ "「你想问的不是这个。」她把针停下，第一次正眼看你，「你想问值不值得。」",
+ "「值得吗？」",
+ "「口子那年撕到七丈。」她说，「再撕三丈，无影林会先没有。然后是青蒲镇，然后是洛水，然后是所有听过洛水这个名字的人。不是死——是没有过。他们的娘不会记得生过他们。」",
+ "她低下头，又缝了一针。",
+ "「我用三千人，换了十年。」她说，「我没有别的办法。你要是有，早说。」"],to:"c8c"},
+c8c:{p:["你把册子拿出来，翻到最后一页，指着那被划掉的半行。",
+ "桑照看了很久。",
+ "「那是我师姐。」她终于说，「第四十任司针，只当了十一天。」",
+ "「她怎么了？」",
+ "「她生了个孩子。」桑照说，「司针不能有牵挂——有牵挂，手就不稳；手不稳，缝出来的东西会活。所以她把孩子的线，从布上剪了下来。」",
+ "屋子里很静。四壁的布轻轻起伏。",
+ "「剪下来，这孩子就不在天衣上了。谁也缝不到他，谁也取不走他的线，什么都伤不了他。她剪完那一剪子，自己的线也断了。」",
+ "她抬起眼睛。",
+ "「那孩子今年，二十六岁。」"],
+ f:s=>{flag(s,"truth");weave(s,-3);},to:null},
+/* ── 九 ── */
+c9a:{t:"一线之外",p:["你在渡口坐了三天。",
+ "渡老没有问你。他只是每天照样撑船，照样在船头抽烟，照样记不住你的脸。",
+ "第三天傍晚他忽然说：「我记起来一件事。」",
+ "「什么？」",
+ "「二十六年前，也是这个渡口。」他眯着眼看水面，「有个白衣裳的女人抱着个襁褓上我的船。她在船上坐了一夜，一句话没说。天亮时她下了船，怀里空了。」",
+ "他把烟锅磕了磕。",
+ "「我一直以为是我记错了。可这十年，每回你上我的船，我就想起那一夜。想完就忘。」"],to:"c9b"},
+c9b:{p:["你现在明白很多事了。",
+ "为什么七日梦你没做。为什么那三千人取线，没取到你——你根本不在布上，针够不着你。为什么渡老记不住你的脸：人的记性也是天衣的一部分，而你不在上面，你在记忆里落不住脚。",
+ "为什么那道白痕在你腕子上。那不是缝过的痕迹，是剪断的地方。",
+ "为什么谢无影说：你和我一样。",
+ "他说错了一半。他是没有过的东西想变成有；你是有的东西被人剪成了没有。",
+ "你们从两边走到同一个地方。"],to:"c9c"},
+c9c:{p:["无影林中央的口子，现在有九丈。",
+ "站在它面前，你能感觉到自己身上唯一的那一线——不是被剪掉的那一段，是新长出来的。二十六年，你活着，打架，欠人情，吃过谁家的馄饨，记得谁手上有三十九个针孔——这些都在往外生线。",
+ "长得很慢。但确实长出来了。",
+ "桑照的手已经抖得握不住针。她把针放在你面前的石头上。",
+ "「三条路。」她说，「我只有力气看你走一条。」"],
+ f:s=>{item(s,"zhen",1);gearGain(s,"w_feng");gearGain(s,"a_tian");learn(s,"tianyi");unlock(s,"lie");},to:null},
+/* ── 终 ── */
+c10a:{t:"天衣",p:["裂在你面前。",
+ "它不宽，不高，不发光也不发暗。它只是一处地方，那里的世界还没有被织过。",
+ "你身后站着一些人。桑照握不住针了。裴无咎醒着，二十年来第一次没喝酒。阿蘅带来了她的家伙什。渡老把船拴在了林子边上——那儿根本没有水。释寒山背着一口钟。卓不弃拎着锤子，三根指头。",
+ "他们不知道自己来做什么。他们只是来了。",
+ "你握住那根没有孔的针。"],
+ b:{foe:"b_lie",win:"c10b"}},
+c10b:{p:["裂退回去了一点。只有一点。",
+ "但你现在看得很清楚：它不会自己合上。它是一道口子，口子需要有人缝。而缝的人，得有线。",
+ "你抬起手腕。那道白痕在发亮。",
+ "该选了。"],
+ o:[
+  {t:"缝 —— 把自己缝回去",to:"end_feng",need:s=>1,sub:"你这二十六年长出来的线，够补九丈。"},
+  {t:"断 —— 把整块天衣剪了",to:"end_duan",sub:"再没有裂，也再没有武功。"},
+  {t:"织 —— 请他们把线给你",to:"end_zhi",need:s=>totalAff(s)>=100&&weaveTotal(s)>=5,sub:"需江湖故人交情合计满百，且织度五以上。"},
+ ]},
+end_feng:{t:"结局 · 缝",p:["你把针尖抵上自己腕间那道白痕。",
+ "很疼。疼是好事——疼说明还连着。",
+ "线从你身上抽出来的时候，你先失去的是名字。然后是青蒲镇馄饨的味道。然后是阿蘅手上第三十九个针孔的位置。然后是渡老磕烟锅的声音。",
+ "你一边失去，一边缝。九丈很长。",
+ "缝到最后一针的时候，你已经不记得自己在缝什么了。你只记得这一针要落在这里，下一针要落在那里。手很稳。",
+ "——",
+ "洛水这一年水很好。渡老新收了个徒弟，教他撑船。裴无咎戒了酒，在县衙门口摆摊帮人写状子。阿蘅当上了缀云楼的楼主，定了条新规矩：绣人像，眼睛可以不最后绣。",
+ "没有人记得曾经有过一个从渡口上岸、没有名字的人。",
+ "但那块布上，有一处地方的针脚，跟别处都不一样。很密，很稳，看得出来是新手活，一针一针，硬是把九丈缝上了。",
+ "看不出接头。"],end:"缝"},
+end_duan:{t:"结局 · 断",p:["你没有去缝。",
+ "你把针横过来，抵住整块天衣的边，然后用尽这辈子所有的力气，往下一划。",
+ "没有声音。",
+ "世上所有练过武的人，在同一刻感觉到胸口一空。像是有人把一直攥着你的那只手松开了。有人跪下来哭，有人愣在原地，有人笑起来，笑得停不下来。",
+ "裂合上了。不是缝上的——是布没有了，口子自然也就没有了。",
+ "从此天下无武。",
+ "磐钟寺的钟还在敲，敲的是钟，不是功课。铁砧堂还在打铁，打的是锄头和菜刀。缀云楼的绣品卖得更好了，因为再没有人拿针杀人。剑冢野那几万柄断剑，被人一柄一柄拔出来，回炉了。",
+ "也有人恨你。恨了一辈子。有人走了几千里路来找你算账，找到了，站在你面前，忽然发现自己不会打人了——他只会用拳头，而拳头现在只是拳头。",
+ "他哭了。你陪他站了很久。",
+ "「值得吗？」他问。",
+ "「我不知道。」你说，「但再没有人会因为一块布破了而死。」"],end:"断"},
+end_zhi:{t:"结局 · 织",p:["你把针举起来，转过身，面对他们。",
+ "「我一个人的线不够。」你说，「九丈。我最多补三丈。」",
+ "没有人说话。",
+ "然后渡老先走上来，伸出手腕。「四十年，」他说，「撑船撑出来的，不算多好的线。」",
+ "裴无咎第二个。「我这根泡了十年酒。」他挽起袖子，「你看着用。」",
+ "阿蘅把她三十九个针孔的那只手递过来。释寒山解下钟。卓不弃伸出三根指头的左手。青蒲镇卖馄饨的来了。断河集上那个卖伞的来了。一个你教过一招的孩子——现在已经不是孩子了——来了。",
+ "桑照坐在石头上看着，忽然哭了。她当了四十一年司针，第一次有人自己把线递过来。",
+ "「不能这样。」她说，「给了线，人会变弱。」",
+ "「变弱就变弱。」渡老说，「你那三千人是没得挑，我们是自己挑的。」",
+ "——",
+ "你缝了三天三夜。",
+ "九丈的口子合上了。缝出来的那一片，针脚乱七八糟，粗细不一，颜色也杂——因为每一根线都是从不同的人身上来的，有的韧，有的脆，有的一看就是舍不得给却还是给了。",
+ "一点也不匀。",
+ "桑照摸着那片新补的地方，摇头：「天衣无缝，天衣无缝——我缝了四十一年，缝出来的都看不出接头。你这个，」",
+ "她笑了。这是你第一次见她笑。",
+ "「满是接头。」",
+ "「接头怎么了。」你说。",
+ "「接头就是——」她想了很久，「就是有人接过谁的手。」",
+ "——",
+ "后来你成了第四十二任司针。",
+ "你定的第一条规矩是：缝天司不取线。",
+ "第二条：谁要给，得当面给，还得说清楚为什么。",
+ "第三条：每年清明，把给过线的人的名字，念一遍。",
+ "名字很多。你念了很久。"],end:"织"},
+};
+function totalAff(s){let t=0;for(const k in s.aff)t+=Math.min(40,s.aff[k]||0);return t;}
+
+/* ═══════════ 状态 ═══════════ */
+let S=null, TAB="place", LOGS=[], dirty=false, hasStore=false, sceneQ=null;
+function newGame(name,orig){
+ const O=ORIGIN[orig];
+ return {v:1,name,orig,sect:null,ch:0,scene:null,
+  at:{gu:5,mai:5,ling:5,shi:5,yuan:5},
+  bonus:{gu:0,mai:0,ling:0,shi:0,yuan:0},
+  exp:0,lvl:0,arts:{},eq:{nei:null,shen:null,form:[]},
+  gear:{weapon:null,armor:null,boots:null,charm:null},
+  own:[],bag:{},silver:O.silver,act:"sit",actSub:null,loc:"dukou",visit:{},
+  locs:["dukou"],flags:{},aff:{},weave:0,hpPct:1,
+  t:Date.now(),born:Date.now(),days:0,kills:0,evs:0,end:null,
+  ...O.init};
+}
+const ORIGIN={
+ gu:{n:"渡口孤儿",d:"你在水边长大，或者说，你醒来时以为自己在水边长大。骨头硬，运气也还行。",b:{gu:3,yuan:2},silver:20},
+ shu:{n:"落第书生",d:"考了三回，三回名落孙山。倒是把《武备志》翻烂了。",b:{ling:4,mai:1},silver:60},
+ biao:{n:"镖局子弟",d:"押过三趟镖，丢过一趟。你爹为此打断了一根藤条。",b:{gu:2,shi:3},silver:80},
+ xiu:{n:"绣坊学徒",d:"手稳，眼毒。你能一眼看出一件衣服哪里补过。",b:{ling:2,shi:2,yuan:1},silver:40},
+ wang:{n:"亡命之徒",d:"你不记得杀过谁，但你的手记得。",b:{shi:4,gu:1},silver:10},
+};
+/* ═══════════ 属性与战力 ═══════════ */
+function artLv(s,id){const a=s.arts[id];return a?a.lv:0;}
+function ef(s){ // 汇总所有武学与装备效果
+ const o={qi:0,atk:0,hp:0,def:0,spd:0,crit:0,dodge:0,pen:0,drain:0,yuan:0,weave:0,stun:0,bleed:0,stack:0};
+ const add=(k,v)=>{if(k in o)o[k]+=v;};
+ for(const id in s.arts){const A=ART[id],lv=s.arts[id].lv;if(!A||!A.ef)continue;
+  const act=(A.k==="nei"&&s.eq.nei===id)||(A.k==="shen"&&s.eq.shen===id);
+  const m=act?lv:lv*0.2; for(const k in A.ef)add(k,A.ef[k]*m);}
+ for(const sl in s.gear){const g=GEAR[s.gear[sl]];if(g)for(const k in g.a)add(k,g.a[k]);}
+ return o;
+}
+function stats(s){
+ const E=ef(s),R=s.lvl,RP=Math.pow(1.5,R);
+ const a={};for(const k in ATTR)a[k]=s.at[k]+(s.bonus[k]||0)+(k==="yuan"?Math.floor(E.yuan):0);
+ const formLv=s.eq.form.reduce((t,id)=>t+artLv(s,id),0);
+ const st={
+  hp:Math.floor((200+a.gu*46+a.yuan*8+E.hp*3.4)*RP),
+  qi:Math.floor((50+a.mai*12+E.qi)*RP),
+  atk:Math.floor((10+a.gu*1.1+a.mai*1.7+a.shi*1.2+a.yuan*0.55+E.atk+formLv*1.6)*RP),
+  def:Math.floor((5+a.gu*1.8+E.def*1.2)*RP),
+  spd:Math.floor(10+a.shi*1.3+E.spd+R*2.2),
+  crit:cl(.03+a.shi*.004+a.yuan*.002+E.crit,0,.50),
+  dodge:cl(.02+a.shi*.002+E.dodge,0,.38),
+  pen:cl(E.pen,0,.55), drain:cl(E.drain,0,.14), a
+ };
+ st.pow=Math.floor(st.hp*.12+st.atk*4+st.def*2.4+st.spd*3+st.crit*400+st.dodge*300);
+ return st;
+}
+function expNeed(r){return REALM[Math.min(r+1,REALM.length-1)].need;}
+function artNeed(id,lv){const A=ART[id];return Math.floor((28*Math.pow(lv+1,1.72)+34*(lv+1))*A.ex);}
+/* ═══════════ 增益函数 ═══════════ */
+function addLog(t,c){LOGS.unshift({t,c:c||"",d:S?dayStr():""});if(LOGS.length>200)LOGS.pop();if(TAB)renderLog();}
+function toast(t){const d=El("div",null,t);$("#toast").appendChild(d);setTimeout(()=>d.remove(),2600);}
+function dayStr(){return "第"+(S.days+1)+"日";}
+function gain(s,k,n){s.bonus[k]=(s.bonus[k]||0)+n;addLog("根基精进：<b>"+ATTR[k][0]+"</b> +"+n,"g");}
+function gainExp(s,n){if(n<=0)return;s.exp+=n;checkRealm(s);}
+function flag(s,f){s.flags[f]=1;}
+function weave(s,n){s.weave=cl((s.weave||0)+n,-20,40);if(n>0)sfx("thread");}
+function weaveTotal(s){return (s.weave||0)+Math.round(ef(s).weave);}
+/* ───────── 叙旧：你是那个谁也记不住的人 ───────── */
+const VISIT={
+ dulao:["渡老正在补船底。你蹲下去帮他扶住木板，他没抬头：「小哥，你是哪天上的船？」你说了。他「哦」了一声，像是信了。",
+  "你带了半斤酒。他喝了一口，忽然说：「我好像给你摆过渡。」你说摆过很多次。他笑了笑：「那怎么我总记成第一次。」",
+  "船停在滩上。他教你怎么看水色。讲到一半他停了：「我方才在跟谁说话来着。」你说是我。他点点头，接着讲。",
+  "他把桨递给你，让你划一段。上岸时他说：「你划得挺熟。」你说你划过。他愣了很久，没再问。"],
+ pei:["裴无咎醉着。你把他扶回屋，他抓着你的袖子问：「你是……那年验尸房里那个？」你说不是。他松了手，「那就好。那个已经死了。」",
+  "你陪他坐了一下午，谁也没说话。临走他喊住你：「喂。」你回头。他说：「没事。我以为你是别人。」",
+  "他把当年的卷宗摊开给你看，三千零一十七个名字。念到一半他停下：「你叫什么来着。」你说了。他在纸边上写下来，写完又划掉了。",
+  "他难得清醒。你们聊了很久。走的时候他说：「下回你来，把名字写门上。我记性坏。」"],
+ heng:["阿蘅在绷布。她抬头看你，针尖悬了一下：「我见过你。」你说见过三次了。她低下头：「那我怎么每次都想说这句。」",
+  "她教你打结。你打得很难看。她伸手来纠，指尖碰到你手腕的疤，停住了：「这道口子……是缝过的。」",
+  "你带了新丝线来。她挑了半天，说这个颜色配你。你问配我什么。她说：「不知道。就是配你。」",
+  "她说昨夜又梦见那个白头发的女人了。你问梦里说了什么。她想了很久：「她说，别把他缝回去。」"],
+ hanshan:["释寒山正在敲第七十九下。你等他敲完一百零八。他放下木槌：「你来过。」你说来过。「嗯，」他说，「钟记得。」",
+  "你问他为什么不受戒。他说因为他记不住经。「一段一段的，念过就散。」他看你一眼，「跟你一样。」",
+  "你替他敲了三十下。他听着，说你敲得太用力：「钟不是要你打疼它，是要你跟它一起响。」",
+  "他递给你一碗粥。你们坐在钟下喝完。他说：「你走之后我大概又会忘。但钟不会。你下回来，听它就知道。」"],
+ zhuo:["卓不弃在淬火。他头也不回：「递铁。」你递过去。他接了，才发现不是学徒：「……你是谁来着。」",
+  "他给你看那三根手指：「这只手认得的人，比脑子多。」他握了握你的手腕，「认得。你来过。」",
+  "你帮他拉了一下午风箱。他没说谢，塞给你一把没开刃的坯子：「拿着。下回来我给你磨。」",
+  "他说他在铁上刻了你的名字，刻完第二天就想不起来刻的是谁了。「所以我把那块铁留着。你自己来认。」"],
+};
+/* 叙旧不花钱——拦着你的是路程和时候，不是银子。
+   要送东西是另一回事：那得是真东西，且得送对人。 */
+const GIFT={
+ dulao:{it:"wangyou",n:3,tx:"你带了把忘忧草来。渡老捏了捏，塞进怀里：「撑了四十年船，肩膀早不是自己的了。」他没说谢，只是往里挪了挪，给你腾出半个船头。"},
+ pei:{it:"wuwei",n:3,tx:"你把那坛五味子酒搁在他面前。裴无咎看了很久，没开封。「你怎么知道我喝这个。」你说你听人讲的。他说：「没人讲。这镇上没人记得我喝什么。」他抬头看你，眼睛很亮。"},
+ heng:{it:"bingcan",n:3,tx:"你把冰蚕丝递过去。阿蘅捻了一下就知道成色，抬眼道：「这个贵。」你说不贵。她收下了，转身穿针，穿了三次才穿进去——她手一向很稳的。"},
+ hanshan:{it:"sanqi",n:3,tx:"你带了三七来。释寒山摊开手给你看：虎口裂着，是常年握槌磨的。他就着水吞了，说：「敲钟的人不该喊疼。」顿了顿又说，「不过疼确实是疼的。」"},
+ zhuo:{it:"hantie",n:3,tx:"你把几块寒铁摆在砧上。卓不弃拿起来掂了掂，扔回去两块：「这两块有砂眼，你被人蒙了。」他把剩下的收进炉边，「剩下的算你的。下回来取。」"},
+};
+function giftFor(k){return GIFT[k];}
+function visitCd(){return 600000;}
+function visitNpc(k){
+ const v=S.aff[k]||0;
+ if(v>=40){addLog("你和 <b>"+NPC[k].n+"</b> 之间，已经没有更近的地方了。","m");return;}
+ const last=(S.visit&&S.visit[k])||0,left=visitCd()-(Date.now()-last);
+ if(left>0){addLog("刚见过面。再等等罢。（"+Math.ceil(left/60000)+" 分钟）","m");return;}
+ S.visit=S.visit||{};S.visit[k]=Date.now();
+ addLog(pick(VISIT[k]||["你去看了看他。"]),"v");
+ aff(S,k,1);save();render();
+}
+function aff(s,id,n){s.aff[id]=cl((s.aff[id]||0)+n,0,100);if(n>0)addLog("与 <b>"+NPC[id].n+"</b> 的交情加深了。","g");}
+function item(s,id,n){if(!id||!ITEM[id])return;s.bag[id]=(s.bag[id]||0)+(n||1);addLog("得到 "+ITEM[id].n+" ×"+(n||1),"g");}
+function takeItem(s,id,n){if((s.bag[id]||0)<n)return false;s.bag[id]-=n;if(s.bag[id]<=0)delete s.bag[id];return true;}
+function gearGain(s,id){if(!GEAR[id])return;if(!s.own.includes(id))s.own.push(id);addLog("得到 <b>"+GEAR[id].n+"</b>","y");}
+function unlock(s,id){if(!s.locs.includes(id)){s.locs.push(id);addLog("可去 <b>"+LOC[id].n+"</b> 了。","y");}}
+function learn(s,id){if(s.arts[id])return;s.arts[id]={lv:0,exp:0};
+ addLog("习得武学 <b>"+ART[id].n+"</b>","y");
+ const A=ART[id]; if(A.k==="nei"&&!s.eq.nei)s.eq.nei=id;
+ if(A.k==="shen"&&!s.eq.shen)s.eq.shen=id;
+ if(A.k==="form"&&s.eq.form.length<3)s.eq.form.push(id);}
+function artExp(s,id,n){if(!id||!s.arts[id])return;const A=ART[id],a=s.arts[id];a.exp+=n;
+ while(a.lv<A.cap&&a.exp>=artNeed(id,a.lv)){a.exp-=artNeed(id,a.lv);a.lv++;
+  if(a.lv%10===0||a.lv===A.cap)addLog("<b>"+A.n+"</b> 已至 "+a.lv+" 层","y");}
+ if(a.lv>=A.cap)a.exp=0;}
+function checkRealm(s){
+ while(s.lvl<REALM.length-1&&s.exp>=expNeed(s.lvl)){
+  const need=expNeed(s.lvl);s.exp-=need;s.lvl++;sfx("lvl");
+  addLog("<b>破境！</b>已入「"+REALM[s.lvl].n+"」之境。","y");
+  toast("破境 · "+REALM[s.lvl].n);
+  for(const k in ATTR)s.bonus[k]=(s.bonus[k]||0)+2;
+ }}
+/* ═══════════ 挂机 ═══════════ */
+function rates(s){
+ const st=stats(s),a=st.a,L=LOC[s.loc]||LOC.dukou;
+ const lm=1+L.lv*0.35, rm=Math.pow(1.85,s.lvl);
+ return {
+  sit:(0.5+a.mai*0.18+a.ling*0.09)*rm*(1+artLv(s,s.eq.nei)*0.02),
+  form:(0.9+a.ling*0.16+a.shi*0.07)*Math.pow(1.5,s.lvl),
+  step:(0.9+a.ling*0.14+a.shi*0.1)*Math.pow(1.5,s.lvl),
+  herb:(0.055+a.yuan*0.006)*lm, mine:(0.05+a.gu*0.005)*lm, silk:(0.05+a.shi*0.005)*lm,
+  walk:(0.022+a.yuan*0.0022)*lm,
+ };
+}
+function tick(s,dt,off){ // dt 秒
+ const R=rates(s),act=s.act;
+ s.playSec=(s.playSec||0)+dt; s.days=Math.floor(s.playSec/1200);
+ if(act==="sit"){gainExp(s,R.sit*dt);artExp(s,s.eq.nei,R.sit*dt*1.1);}
+ else if(act==="form"){const id=s.actSub||s.eq.form[0];artExp(s,id,R.form*dt);gainExp(s,R.sit*dt*0.25);}
+ else if(act==="step"){artExp(s,s.eq.shen,R.step*dt);gainExp(s,R.sit*dt*0.25);}
+ else if(act==="herb"||act==="mine"||act==="silk"){
+  const pool={herb:["sanqi","sanqi","wangyou","xuejian"],mine:["tiesha","tiesha","hantie"],silk:["cansi","cansi","bingcan"]}[act];
+  const n=R[act]*dt; const whole=Math.floor(n); s.frac=(s.frac||0)+(n-whole);
+  let tot=whole; if(s.frac>=1){tot+=Math.floor(s.frac);s.frac%=1;}
+  for(let i=0;i<Math.min(tot,400);i++){const it=pick(pool);s.bag[it]=(s.bag[it]||0)+1;}
+  if(tot>0&&!off)quietGain(act,tot);
+  gainExp(s,R.sit*dt*0.12);
+ } else if(act==="walk"){
+  gainExp(s,R.sit*dt*0.4);
+  const n=R.walk*dt; s.evF=(s.evF||0)+n;
+  if(!off){ if(s.evF>=1){s.evF=0;rollEvent(s);} }
+  else { const k=Math.min(Math.floor(s.evF),12); if(k>0){s.evF=0; s.offEv=(s.offEv||0)+k;
+    for(let i=0;i<k;i++){s.silver+=ri(10,60);gainExp(s,60+s.lvl*40);if(rnd(1)<.4)item2(s,pick(["sanqi","tiesha","cansi","canye"]));}}}
+ }
+}
+function item2(s,id){s.bag[id]=(s.bag[id]||0)+1;}
+let qg={},qgT=0;
+function quietGain(a,n){qg[a]=(qg[a]||0)+n;if(Date.now()-qgT>30000){qgT=Date.now();
+ const m=Object.keys(qg).map(k=>ACT[k].n+" ×"+qg[k]).join("，");if(m)addLog("这半日的收获："+m,"");qg={};}}
+/* ═══════════ 奇遇 ═══════════ */
+/* ═══════════ 遭遇 ═══════════
+   敌人不站在原地等你点。他们有来由，多半还给你留了别的路走。
+   kind：遭遇／伏击／切磋／求助／勒索                              */
+const AMBIENT={
+ dukou:["水面上浮着一层看不清的东西，风一吹就散，散了又聚。","渡老在船尾磕烟锅，磕三下，停一下，再磕三下。","有人在对岸喊渡，喊了两声就不喊了。"],
+ qingpu:["井台边有人在洗衣裳，棒槌声一下一下。","馄饨摊的热气糊住了半条街。","两个孩子在墙根下用石子摆阵，摆的是个「缝」字。"],
+ duanhe:["集上有人低声报价，报的是什么听不真切。","一个瞎子坐在路口弹弦子，弦断了一根，他照弹。","风里有铁腥味，不知道从哪儿来的。"],
+ panshan:["钟响了一下。你数了数，是第四十七下。","石阶上的字被雨冲得发白，今天格外清楚。","山道上没有别人。你的脚步声回来得比该有的慢。"],
+ yunxiu:["织机整条巷子都在响，夜里也响。","染坊门口挂着一匹布，红得不像话。","有个绣娘在门槛上打盹，手里还捏着针。"],
+ kuhe:["河床上的裂口在出气，一阵一阵，像呼吸。","远处有石头滚下去的声音，滚了很久才停。","干河底躺着一只旧鞋，只有一只。"],
+ tiezhen:["炉火的红光从堡墙缝里漏出来。","有人在里头喊号子，喊一声，锤落一下。","空气烫得发抖。"],
+ jianzhong:["几万柄断剑插在地里，风过的时候整片地在响。","有一柄剑忽然倒了，没有风。","锈味重得能尝出来。"],
+ wuying:["林子里没有影子。不是因为没有光。","你抬头，树冠密得看不见天，地上却是亮的。","有什么东西从你旁边走过去了，你没看见。"],
+ zhishi:["四壁在极缓慢地起伏。","有针穿过布的声音，一下，一下。","这里很暖。暖得不像地底下。"],
+ lie:["你找不到词形容它。它也不需要词。"],
+ zhongfu:["钟腹里很黑。你的呼吸撞在壁上弹回来。"],
+ jianshen:["断剑堆成的人形立在那里，比你高出两个头。"],
+};
+const ENC=[
+ {id:"n_shuifei",where:["dukou", "duanhe", "kuhe"],tr:0,w:10,foe:"shuifei",t:"过路钱",
+  tx:["你刚要上船，一条小艇从苇丛里横出来，别住了渡口。","艇上下来个赤膊的，腰里别着柴刀，伸手：「过河，三十文。」",
+      "渡老在船尾没抬头。看样子这事常有。"],
+  o:[{t:"给钱（三十文）",need:s=>s.silver>=30,f:s=>{s.silver-=30;addLog("你给了钱。他让开，还挺客气地伸手扶了你一把。上船之后渡老才说：「这钱本该我收的。」","")}},
+     {t:"「渡口是官家的。」",f:s=>{if(rnd(1)<.45){addLog("他愣了一下，往岸上看了看，骂了一句缩回艇里去了。","g");gain(s,"yuan",1);}
+       else{addLog("「官家？」他笑了，「官家十年没来过了。」柴刀已经出鞘。","r");fight(s,"shuifei");}}},
+     {t:"不说话，往前走",f:s=>{addLog("你抬脚就上船。他在背后喊了一声，你没回头——然后听见了下水的声音。","r");fight(s,"shuifei");}}]},
+ {id:"n_poluo",where:["qingpu", "duanhe", "tiezhen"],tr:0.8,w:10,foe:"poluo",t:"堵在巷口的",
+  tx:["巷口蹲着三个人，见你来了，慢慢站起来一个。","「借过啊，」他说，「借过要留点买路的意思。」","另外两个没动，也没走。"],
+  o:[{t:"丢两个钱过去",need:s=>s.silver>=20,f:s=>{s.silver-=20;addLog("钱在地上滚了两圈。他捡起来吹了吹土，侧身让路。走出巷子你听见背后有人笑。","")}},
+     {t:"「三个打一个，传出去好听么。」",f:s=>{if(rnd(1)<.5){addLog("后面两个对视一眼，先走了。剩下这个站了半天，也走了。","g");gain(s,"shi",1);}
+       else{addLog("「好听不好听，」他说，「你先躺下再说。」","r");fight(s,"poluo");}}},
+     {t:"先动手",f:s=>{addLog("你没等他说完。","r");fight(s,"poluo");}}]},
+ {id:"n_jiaofu",where:["duanhe", "qingpu", "tiezhen", "yunxiu"],tr:2,w:9,foe:"jiaofu",t:"压在地上的脚夫",
+  tx:["集市后头，两个带刀的把一个脚夫按在地上。挑子翻了，货撒了一地。","「少了一件。」带刀的说。脚夫说没少。带刀的又说了一遍：「少了一件。」",
+      "周围人在看，没人上前。"],
+  o:[{t:"上去拦",f:s=>{addLog("你走过去。带刀的抬头看你，从上到下看了一遍，然后手按上了刀柄。","r");
+       fight(s,"jiaofu",()=>{addLog("脚夫爬起来，把货一件件捡回挑子里，捡完了才给你磕了个头。你没受。","v");weave(s,1);gainExp(s,200);});}},
+     {t:"替他把那一件赔了",need:s=>s.silver>=120,f:s=>{s.silver-=120;addLog("你把钱递过去。带刀的掂了掂，放了人。脚夫想说什么，你摆摆手。","y");weave(s,1);gain(s,"yuan",1);}},
+     {t:"看着",f:s=>{addLog("你站着看完了。脚夫最后被拖走了，挑子还翻在地上。散场之后你过去，把它扶正了。","r");weave(s,-1);}}]},
+ {id:"n_yeshou",where:["panshan", "kuhe", "jianzhong", "wuying", "jianshen", "zhongfu"],tr:2.6,w:10,foe:"yeshou",kind:"伏击",t:"从侧面来的",
+  tx:["你听见的时候它已经在侧面了。","狼不叫。叫的是没见过人的狼。"],
+  o:[{t:"（来不及了）",f:s=>{fight(s,"yeshou");}}]},
+ {id:"n_daoke",tr:3.6,w:10,foe:"daoke",kind:"切磋",t:"讨教",
+  tx:["路边树下坐着个人，刀横在膝上。你走过去的时候他抬起头。","「你身上有功夫。」他说，「我看了你走的三步。」",
+      "他站起来，把刀连鞘递到身前：「不伤人。点到为止。」"],
+  o:[{t:"接了",f:s=>{addLog("你也把兵器收了鞘。","");fight(s,"daoke",
+       ()=>{addLog("他退了半步，笑了：「够了。」问了你的名字，说记下了。","g");gain(s,"shi",1);gainExp(s,400);},
+       ()=>{addLog("他收了刀，说：「差得不远。再练两年。」说完就走了，走得很快。","");gainExp(s,180);},
+       {duel:1});}},
+     {t:"「不比。」",f:s=>{addLog("他点点头，坐回去了。「也好。不是谁都非要分个高低。」走出很远你回头，他还坐在那儿。","");gain(s,"ling",1);}},
+     {t:"「不伤人？那你收着刀做什么。」",f:s=>{addLog("他看了你一会儿，把刀出了鞘。「那就不点到为止。」","r");fight(s,"daoke");}}]},
+ {id:"n_xiepai",where:["kuhe", "jianzhong", "wuying", "jianshen", "duanhe"],tr:4.6,w:9,foe:"xiepai",t:"在挖东西的人",
+  tx:["前头有三个人围着一个新土堆，正在往下挖。挖出来的不是别的，是一副还没烂透的骨头。","为首那个正在撬那副骨头的下颌。撬开了，用镊子往里探。",
+      "他探出一截东西来，对着光看——细，白，两头齐。"],
+  o:[{t:"喝止",f:s=>{addLog("他回过头，一点也不慌：「你也认得这个？」镊子上那截银线在晃。","r");
+       fight(s,"xiepai",()=>{addLog("你把土填了回去，拍实。做完才想起自己并不认识这个人。","v");weave(s,1);});}},
+     {t:"问他这东西值多少",f:s=>{addLog("「一寸一百文，」他说，「你要卖我也收。」他把镊子上那截递过来，你接了。","y");item(s,"yinxian",1);weave(s,-1);}},
+     {t:"退回去，绕路",f:s=>{addLog("你退了三步，转身绕开。走出很远还听得见铁器碰骨头的声音。","");gain(s,"ling",1);}}]},
+ {id:"n_wuying",where:["wuying", "lie", "zhishi", "kuhe"],tr:6,w:10,foe:"wuyingzhe",kind:"遭遇",t:"站在路当中的",
+  tx:["它站在路当中，正对着你。","你看不见它出手的那只手臂的中段——不是被挡住，是那一段不在。",
+      "它没有动。它好像在等你先认出它是什么。"],
+  o:[{t:"动手",f:s=>{fight(s,"wuyingzhe",()=>{addLog("它散开的时候没有血，是线。线落在地上，很快就看不见了。","v");weave(s,1);});}},
+     {t:"「你想要什么。」",f:s=>{if(rnd(1)<.5){addLog("它开口了。声音是从你背后传来的：「被记住。」说完就不见了。","v");weave(s,2);gainExp(s,800);}
+       else{addLog("它没有回答。它只是离你近了一点——你没看见它怎么过来的。","r");fight(s,"wuyingzhe");}}},
+     {t:"退开",f:s=>{addLog("你一步一步往后退。它没跟上来。退到看不见它的地方，你才发现自己的影子也没跟上来。","r");weave(s,-1);}}]},
+ {id:"n_sishi",where:["zhishi", "lie", "wuying"],tr:7.4,w:10,foe:"sishi",t:"缝尸人",
+  tx:["他跪在一具尸首旁边，正在缝。缝的不是伤口——尸首身上没有伤。","他是在把线往里缝。一针,一针，缝得很慢，很仔细，像在补一件要紧的衣裳。",
+      "他抬头看见你，手没有停：「你也是来取的？」"],
+  o:[{t:"「你在做什么。」",f:s=>{addLog("「补。」他说，「他缺了一块。人缺了一块就得补，不然要散。」他低下头继续缝，「你也缺了一块。你自己不知道。」","v");
+       weave(s,2);gainExp(s,1500);gain(s,"ling",1);}},
+     {t:"夺下他的针",f:s=>{addLog("你伸手去夺。他护住了尸首——不是护自己。","r");
+       fight(s,"sishi",()=>{addLog("他倒下的时候还攥着针。你掰开他的手，针上缠着一点头发，白的。","v");item(s,"zhen",1);weave(s,1);});}},
+     {t:"等他缝完",f:s=>{addLog("你在旁边站了一个时辰。他缝完最后一针，打了结，咬断线，站起来对你点了点头，走了。尸首还躺在那里，完完整整。","v");weave(s,2);gainExp(s,1100);}}]},
+ {id:"n_qiuzhu",where:["qingpu", "duanhe", "tiezhen", "yunxiu"],tr:1.6,w:7,foe:"poluo",t:"被围住的货郎",
+  tx:["路边一个货郎被围住了。担子已经被踢翻，他护着的不是货，是怀里一个布包。","「里头是我闺女的药。」他说了三遍。围着的人不听。"],
+  o:[{t:"上去",f:s=>{fight(s,"poluo",()=>{addLog("货郎把布包紧了紧，问你姓什么。你说了。他念了两遍，说他记不住，但会记得有这么个人。","v");weave(s,1);item(s,"wangyou",2);});}},
+     {t:"喊一声「官差来了」",f:s=>{if(rnd(1)<.55){addLog("几个人四散跑了。货郎捡起担子，硬塞给你两包药。","g");item(s,"sanqi",2);weave(s,1);}
+       else{addLog("没人信。有一个还朝你这边走过来了。","r");fight(s,"poluo");}}},
+     {t:"走开",f:s=>{addLog("你绕了过去。走出半里地，身后那边安静了。","");weave(s,-1);}}]},
+ {id:"n_qiecuo",where:["qingpu", "duanhe", "tiezhen", "panshan", "yunxiu"],tr:2.6,w:6,foe:"jiaofu",kind:"切磋",t:"茶棚里的赌约",
+  tx:["茶棚里几个人在争，争的是谁的功夫更硬。见你进来，有一个站起来。","「新来的。」他说，「陪我走两趟？输了给茶钱。」","棚里的人都在看。"],
+  o:[{t:"走两趟",f:s=>{fight(s,"jiaofu",
+       ()=>{addLog("他伸手抹了把脸，笑着去柜上会了账。茶棚里有人拍桌子。","g");s.silver+=60;gain(s,"shi",1);},
+       ()=>{addLog("你给了茶钱。他倒是客气，反过来敬了你一碗。","");s.silver=Math.max(0,s.silver-60);gainExp(s,150);},
+       {duel:1});}},
+     {t:"「我不喝茶。」",f:s=>{addLog("你转身出去了。背后有人笑，笑得不太好听。你没回头。","");}}]},
+];
+function encPool(){
+ const lv=LOC[S.loc].lv||0;
+ return ENC.filter(e=>e.tr<=lv+0.4&&e.tr>=lv-2.6&&(!e.where||e.where.includes(S.loc)));
+}
+function rollEnc(){
+ if(sceneQ||S.end)return false;
+ let pool=encPool();if(!pool.length)return false;
+ S.recent=S.recent||[];
+ const fresh=pool.filter(e=>!S.recent.includes(e.id));
+ if(fresh.length)pool=fresh;
+ const tot=pool.reduce((t,e)=>t+e.w,0);let r=rnd(tot),e=pool[0];
+ for(const x of pool){r-=x.w;if(r<=0){e=x;break;}}
+ S.recent=(S.recent||[]).concat(e.id).slice(-3);
+ S.evs++;showEvent(e);return true;
+}
+function ambient(){
+ const a=AMBIENT[S.loc];if(!a)return;
+ addLog(pick(a),"m");
+}
+/* 主动去招惹 */
+function probe(){
+ if(sceneQ)return;
+ S.probe=S.probe||{};
+ const r=rnd(1);
+ if(r<.40){ if(!rollEnc()){ if(!rollEvent2())ambient(); } }
+ else if(r<.72){ rollEvent2(); }
+ else if(r<.88){ ambient(); }
+ else { addLog(pick(["你在这一带转了一圈，什么也没碰上。","转了半晌，只惊起几只鸟。",
+   "没什么事。有时候没事就是好事。","你站了一会儿，听了听，走回来了。"]),"m"); }
+ save();render();
+}
+function rollEvent2(){ if(sceneQ)return false; rollEvent(S); return true; }
+/* 到一个地方，多半什么也不发生 */
+function arrive(){
+ if(sceneQ||S.end)return;
+ const r=rnd(1);
+ if(r<.50)return;                 // 什么也没有
+ if(r<.74){ambient();return;}     // 只是景致
+ if(r<.93){rollEvent(S);return;}  // 遇上一桩事
+ rollEnc();                       // 少数时候才是麻烦
+}
+/* ───────── 方位与搜索 ───────── */
+const DIRN={n:"北",s:"南",e:"东",w:"西"};
+function dirOf(a,b){const A=LOC[a],B=LOC[b];
+ if(B.y<A.y)return "n"; if(B.y>A.y)return "s"; if(B.x>A.x)return "e"; return "w";}
+function nbr(d){const L=LOC[S.loc];
+ return (L.to||[]).find(t=>LOC[t]&&locOpen(t)&&dirOf(S.loc,t)===d);}
+/* 一处一桩，搜出来才算数 */
+const FIND={
+ dukou:{t:"船底的夹层",tx:"你把渡船翻过来看。船底钉着一块补板，补板底下塞着一卷油布。油布里是一张名单，三十几个名字，每个名字上都打了叉。最后一个没打。",
+  f:s=>{item(s,"canye",2);weave(s,1);addLog("最后那个名字被水泡烂了，认不出来。你盯着它看了很久，总觉得笔画很熟。","v");}},
+ qingpu:{t:"井底",tx:"你坠着绳子下到井底。水很浅，底下垫着一层东西——不是石头，是骨头，细细的，像针。",
+  f:s=>{item(s,"zhen",3);gain(s,"ling",1);addLog("你捡了三根上来。回到地面上再看，它们只是三根普通的绣花针。","y");}},
+ duanhe:{t:"没人管的摊子",tx:"集市角落有个摊子，摊主不见了，东西还摆着。旁边人说他昨天就没来，也说不清他长什么样。",
+  f:s=>{item(s,"duanxian",2);s.silver+=260;addLog("你替他收了摊。钱箱里有二百六十文，你拿了——反正也没人记得该还给谁。","y");}},
+ panshan:{t:"敲不响的那一口",tx:"寺里有两口钟。小的那口天天敲，大的那口从来不敲。你绕着大钟走了一圈，发现钟壁上有一道缝，缝里透出光。",
+  f:s=>{unlock(s,"zhongfu");addLog("钟是空的。缝下面有个够一个人钻进去的口子。","g");addLog("舆图上多了一处：<b>钟腹</b>（磐钟山道以北）。","g");weave(s,1);}},
+ yunxiu:{t:"锁着的那间",tx:"绣坊最里头有一间常年上锁。阿蘅说那是她娘的屋子，钥匙早丢了。你推了推，门闩是朽的。",
+  f:s=>{item(s,"bingcan",1);aff(s,"heng",2);addLog("屋里只有一台空机子和一面镜子。镜子朝着墙。你把它转过来，镜面里的绣坊是空的——没有机子，也没有你。","v");weave(s,1);}},
+ kuhe:{t:"河床下的东西",tx:"你顺着裂口往下刨。刨到三尺深，铲子磕上了硬物——不是石头，是一块界碑，碑面朝下埋着。",
+  f:s=>{item(s,"gujuan",1);gainExp(s,700);addLog("翻过来，上面刻着「缝天司枯河署」六个字，底下一行小字：历代司针，四十一人。","v");weave(s,2);}},
+ tiezhen:{t:"废兵器堆",tx:"堡墙是拿废兵器垒的。你在墙根下翻了半天，翻出一截没有柄的刀身，锈得厉害，断口却是新的。",
+  f:s=>{item(s,"hantie",4);gain(s,"gu",1);addLog("断口很齐，像是被什么一下子截断的。卓不弃看了一眼就走开了：「别问。」","y");}},
+ jianzhong:{t:"剑堆里的路",tx:"几万柄断剑插得密不透风，但你注意到有一列剑是倒着插的，剑柄朝下，连成一条线，一直往西。",
+  f:s=>{unlock(s,"jianshen");addLog("你顺着那条线走。走到尽头，剑忽然多了起来。","g");addLog("舆图上多了一处：<b>剑冢深处</b>（剑冢野以西）。","g");weave(s,1);}},
+ zhongfu:{t:"从里面刻的字",tx:"钟腹内壁刻满了字，笔画都朝里，是有人关在里面一刀一刀刻的。刻的是同一句话，刻了几千遍。",
+  f:s=>{gainExp(s,1400);gain(s,"ling",2);addLog("那句话是：「我还记得我是谁。」越往后刻得越浅，最后几遍只剩下划痕。","v");weave(s,2);}},
+ jianshen:{t:"堆成人形的那一堆",tx:"断剑堆成一个人形，很高，比你高出两个头。你绕着它走，发现它不是堆出来的——是长出来的。",
+  f:s=>{gearGain(s,"w_qing");gainExp(s,1200);addLog("你从它心口的位置抽出一柄还算完整的断剑。人形塌了下来，塌成一地普通的废铁。","g");weave(s,1);}},
+ wuying:{t:"林子里没有的东西",tx:"你在林中找了很久，想找一样有影子的东西。一样也没有。最后你在树底下找到一个人形的凹陷，很浅，像是有人在这里躺了很多年。",
+  f:s=>{item(s,"duanxian",3);weave(s,2);addLog("你躺进去试了试。不大不小，正正好好。","r");}},
+ zhishi:{t:"针囊",tx:"织室墙角搁着一只旧针囊，摊开来是四十个位置，插着三十九根针。第四十个位置空着，绒布是压过的，插过东西。",
+  f:s=>{item(s,"zhen",5);gain(s,"ling",2);addLog("三十九根针，每一根上都缠着一点点头发。白的。","v");weave(s,2);}},
+};
+function giveGift(k){
+ const g=GIFT[k];if(!g)return;
+ const v=S.aff[k]||0;
+ if(v>=40){addLog("你和 <b>"+NPC[k].n+"</b> 之间，已经没有更近的地方了。","m");return;}
+ const left=visitCd()-(Date.now()-((S.visit&&S.visit[k])||0));
+ if(left>0){addLog("刚见过面。再等等罢。（"+Math.ceil(left/60000)+" 分钟）","m");return;}
+ if((S.bag[g.it]||0)<1){addLog("你身上没有"+ITEM[g.it].n+"。","r");return;}
+ takeItem(S,g.it,1);
+ S.visit=S.visit||{};S.visit[k]=Date.now();
+ addLog(g.tx,"v");
+ aff(S,k,g.n);sfx("thread");save();render();
+}
+function searched(k){return (S.found||{})[k];}
+function sweepCd(){return 300000;}
+function searchHere(){
+ const k=S.loc,F=FIND[k];
+ S.found=S.found||{};S.sweep=S.sweep||{};
+ if(F&&!S.found[k]){
+  S.found[k]=1;
+  sfx("needle");
+  ov('<h2>'+F.t+'</h2><div class="seam gold"></div><div class="story"><p>'+F.tx+'</p></div>'+
+   '<div class="btns"><button class="btn pri" id="ok">收</button></div>')
+   .querySelector("#ok").onclick=()=>{closeOv();render();};
+  F.f(S);save();renderMain();return;
+ }
+ const left=sweepCd()-(Date.now()-(S.sweep[k]||0));
+ if(left>0){toast("这里刚翻过，再等 "+Math.ceil(left/60000)+" 分钟");return;}
+ S.sweep[k]=Date.now();
+ const L=LOC[k];
+ if(rnd(1)<.55){
+  const pool=(L.acts||[]).includes("silk")?["cansi","zhen"]:(L.acts||[]).includes("herb")?["sanqi","xuejian"]:["tiesha","hantie"];
+  item(S,pick(pool),ri(1,2));
+ } else if(rnd(1)<.3){const m=ri(8,40)*(1+S.lvl);S.silver+=m;addLog("墙缝里抠出 "+fmt(m)+" 文。","y");}
+ else addLog(pick(["你把这一带翻了一遍，什么也没有。","除了土就是土。","你翻出半只破鞋。看了看，又放回去了。"]),"m");
+ save();renderMain();
+}
+/* ───────── 行路：舆图是一棵树，只能沿路走 ───────── */
+function locOpen(k){return S.locs.includes(k);}
+function locVisible(k){return locOpen(k);}
+function pathTo(from,to){
+ if(from===to)return [];
+ if(!locOpen(to))return null;
+ const prev={},seen={},q=[from];seen[from]=1;
+ while(q.length){const c=q.shift();
+  for(const t of (LOC[c].to||[])){
+   if(!locOpen(t)||seen[t])continue;
+   seen[t]=1;prev[t]=c;
+   if(t===to){const p=[];let x=to;while(x!==from){p.unshift(x);x=prev[x];}return p;}
+   q.push(t);}}
+ return null;
+}
+function stepsTo(k){const p=pathTo(S.loc,k);return p?p.length:-1;}
+function travel(k){
+ if(k===S.loc||!LOC[k])return;
+ const p=pathTo(S.loc,k);
+ if(!p){toast("去不了——路上还隔着没走通的地方。");return;}
+ let hit=null;
+ for(const step of p){
+  const from=LOC[S.loc].n;S.loc=step;
+  addLog("你离了"+from+"，一路走到 <b>"+LOC[step].n+"</b>。","");
+  sfx(step==="dukou"||from==="洛水渡口"?"water":"step");
+  if(!hit&&rnd(1)<.2)hit=1;
+ }
+ if(p.length>1)addLog("这一趟走了 "+p.length+" 程。","m");
+ bgm(bgmFor(S.loc));save();render();
+ if(hit&&!sceneQ&&!S.end)rollEvent(S); else arrive();
+}
+function rollEvent(s){
+ if(sceneQ)return;
+ const pool=EV.filter(e=>(!e.need||e.need(s))&&(!e.loc||e.loc.includes(s.loc)));
+ const wt=e=>e.loc?e.w*3:e.w;
+ const tot=pool.reduce((t,e)=>t+wt(e),0);let r=rnd(tot),e=pool[0];
+ for(const x of pool){r-=wt(x);if(r<=0){e=x;break;}}
+ s.evs++;
+ showEvent(e);
+}
+/* ═══════════ 战斗 ═══════════ */
+let BT=null;
+function foeNum(f){const t=f.tr,k=f.k||1,b=f.boss?1:0;
+ return {hp:Math.round(479*Math.pow(2.142,t)*k*(b?2.2:1)),
+  atk:Math.round(38*Math.pow(2.103,t)*(f.ka||k)*(b?1.02:1)),
+  def:Math.round(7.4*Math.pow(2.050,t)*(f.kd||1)),
+  spd:Math.round(9+t*3.6)};}
+function foeStats(f){const L=f.lv,N=foeNum(f);return{n:f.n,hp:N.hp,mhp:N.hp,atk:N.atk,def:N.def,spd:N.spd,
+ crit:.05+L*.004,dodge:.02+L*.004,pen:0,qi:999,foe:f};}
+function meStats(s){const st=stats(s);return{n:s.name,hp:Math.max(1,Math.floor(st.hp*(s.hpPct||1))),mhp:st.hp,
+ atk:st.atk,def:st.def,spd:st.spd,crit:st.crit,dodge:st.dodge,pen:st.pen,drain:st.drain,qi:st.qi,mqi:st.qi,me:1};}
+function fight(s,foeId,onWin,onLose,sc){
+ const f=FOE[foeId];if(!f)return;
+ BT={A:meStats(s),B:foeStats(f),log:[],turn:0,foeId,onWin,onLose,stack:0,bleed:0,stun:0,stunB:0,duel:!!(sc&&sc.duel),
+     sceneWin:sc&&sc.win,sceneLose:(sc&&sc.lose)||null};
+ runBattle();
+}
+function blog(L,cls,txt){const b=BT;L.push([cls,txt,b.A.hp,b.B.hp]);}
+function runBattle(){
+ const b=BT,A=b.A,B=b.B,L=b.log;
+ blog(L,"m","—— "+A.n+"　对　"+B.n+" ——");
+ let guard=0;
+ while(A.hp>0&&B.hp>0&&guard<120){
+  guard++;b.turn++;
+  blog(L,"r","第 "+b.turn+" 回合");
+  const order=A.spd>=B.spd?[[A,B],[B,A]]:[[B,A],[A,B]];
+  for(const [x,y] of order){
+   if(A.hp<=0||B.hp<=0)break;
+   if(x.me&&b.stun>0){b.stun--;blog(L,"m",x.n+"胸中钟鸣未绝，这一招使不出来。");continue;}
+   if(!x.me&&b.stunB>0){b.stunB--;blog(L,"y",x.n+"气血翻涌，这一招没递出来。");continue;}
+   act(x,y,L);
+  }
+  if(b.bleed>0&&B.hp>0){const d=Math.floor(B.mhp*0.012*b.bleed);B.hp-=d;
+   blog(L,"y",B.n+"的伤口还在渗，又失了 "+d+" 点气血。");b.bleed=Math.max(0,b.bleed-0.4);}
+ }
+ if(A.hp>0&&B.hp>0){b.draw=1;blog(L,"m","两人都动不了了。这一场算平手。");A.hp=Math.max(1,A.hp);}
+ finishBattle();
+}
+function act(x,y,L){
+ const b=BT;
+ let sk=null;
+ if(x.me){
+  const cands=S.eq.form.filter(id=>S.arts[id]&&(ART[id].cost||0)<=x.qi);
+  if(cands.length&&rnd(1)<.78){const id=pick(cands);sk={id,A:ART[id]};x.qi-=(sk.A.cost||0);}
+ }
+ if(rnd(1)<cl(y.dodge,0,.5)){
+  blog(L,"m",y.n+(y.me?"侧身让开半尺，这一下擦着衣襟过去了。":"堪堪避开。"));return;
+ }
+ const mul=sk?sk.A.mul:1, pen=(x.pen||0)+(sk&&sk.A.ef&&sk.A.ef.pen?sk.A.ef.pen:0);
+ const stackB=x.me?Math.min(b.stack,12)*0.05:0;
+ const ramp=b.turn>30?1+(b.turn-30)*0.11:1;
+ let crit=x.crit+(sk&&sk.A.ef&&sk.A.ef.crit?sk.A.ef.crit:0);
+ const isC=rnd(1)<crit;
+ const raw=x.atk*mul*(1+stackB), dE=y.def*(1-cl(pen,0,.9));
+ let dmg=raw*(x.atk/(x.atk+dE));
+ dmg*=(0.86+rnd(.28))*ramp; if(isC)dmg*=1.85;
+ dmg=Math.max(2,Math.floor(dmg));
+ y.hp-=dmg;
+ if(sk&&sk.A.ef){const E=sk.A.ef;
+  if(E.bleed)b.bleed+=E.bleed; if(E.stack)b.stack++;
+  if(E.stun&&rnd(1)<E.stun&&!y.me){b.stunB++;blog(L,"y",y.n+"被震得气血翻涌，慢了半拍。");}
+  if(E.drainHit){const h=Math.floor(dmg*E.drainHit*10);x.qi=Math.min(x.mqi||999,x.qi+h);}
+ }
+ if(x.drain&&x.me){const h=Math.floor(dmg*x.drain);x.hp=Math.min(x.mhp,x.hp+h);}
+ let line;
+ if(sk&&sk.A.ln)line=pick(sk.A.ln).replace(/\{A\}/g,x.n).replace(/\{B\}/g,y.n).replace(/\{S\}/g,sk.A.n);
+ else if(!x.me&&x.foe&&x.foe.ln)line=x.n+pick(x.foe.ln)+"，"+y.n+"格挡不及。";
+ else line=x.n+"抢进一步，一记实的落在"+y.n+"身上。";
+ blog(L,isC?"h":(x.me?"g":"h"),line+"（"+(isC?"重手 ":"")+dmg+"）");
+}
+function finishBattle(){
+ const b=BT,A=b.A,B=b.B,L=b.log;
+ if(b.duel&&A.hp>0){
+  blog(L,"g","—— 你赢了这一场 ——");
+  S.hpPct=cl(A.hp/A.mhp,.05,1);
+  b.spoil=["点到为止。"];
+  showBattle();return;
+ }
+ if(b.draw){
+  S.hpPct=cl(A.hp/A.mhp,.05,1);
+  b.spoil=["谁也没赢。你收了势，他也收了势。"];
+  showBattle();return;
+ }
+ if(A.hp>0){
+  blog(L,"g","—— "+B.n+"倒下了 ——");
+  S.hpPct=cl(A.hp/A.mhp,.05,1);S.kills++;
+  const f=B.foe;
+  const sv=ri(f.sv[0],f.sv[1]);S.silver+=sv;
+  const ex=Math.floor((60+f.lv*f.lv*22)*(1+S.lvl*.1));gainExp(S,ex);
+  const lines=["银两 +"+sv,"内力修为 +"+fmt(ex)];
+  if(f.drop)for(const [id,p] of f.drop)if(rnd(1)<p){const n=ri(1,2);S.bag[id]=(S.bag[id]||0)+n;lines.push(ITEM[id].n+" ×"+n);}
+  b.spoil=lines;
+ } else if(b.duel){
+  blog(L,"m","—— 你输了这一场 ——");
+  S.hpPct=.35;
+  b.spoil=["点到为止。输了也只是输了。"];
+ } else {
+  blog(L,"h","—— 你倒下了 ——");
+  S.hpPct=.25;const lost=Math.floor(S.silver*.15);S.silver-=lost;
+  b.spoil=["你在路边醒来，身上少了 "+lost+" 文。","气血亏损，需静养。"];
+ }
+ showBattle();
+}
+
+/* ═══════════ 覆盖层 ═══════════ */
+function closeOv(){$("#ov").innerHTML="";sceneQ=null;}
+function ov(inner,wide){
+ const v=El("div","veil");const sh=El("div","sheet");if(wide)sh.style.maxWidth="720px";
+ sh.innerHTML=inner;v.appendChild(sh);$("#ov").innerHTML="";$("#ov").appendChild(v);return sh;
+}
+function paras(arr){return arr.map(p=>{
+ if(/^「|^「/.test(p))return '<p class="say">'+p+'</p>';
+ if(p==="——")return '<div class="seam gold"></div>';
+ return '<p>'+p+'</p>';}).join("");}
+/* ── 剧情 ── */
+function showScene(id){
+ if(id==="@name")return nameDialog();
+ if(id==="@sect")return sectDialog();
+ const sc=SC[id];if(!sc){closeOv();S.scene=null;save();render();return;}
+ sceneQ=id;S.scene=id;
+ S.seen=S.seen||{};
+ if(id==="c10b")forkSnap();
+ if(sc.f&&!S.seen[id]){S.seen[id]=1;sc.f(S);}
+ if(sc.b){return battleIntro(sc);}
+ let h="";
+ if(sc.t)h+='<h2>'+sc.t+'</h2><div class="seam gold"></div>';
+ if(sc.who)h+='<div class="who">'+sc.who+'</div>';
+ h+='<div class="story">'+paras(sc.p)+'</div>';
+ if(sc.end){h+='<div class="seam gold"></div><div class="btns"><button class="btn pri" id="ok">收笔</button></div>';}
+ else if(sc.o){h+='<div class="seam"></div>';
+  sc.o.forEach((o,i)=>{const ok=!o.need||o.need(S);
+   h+='<button class="opt" data-i="'+i+'"'+(ok?"":" disabled")+'>'+o.t+(o.sub?'<small>'+o.sub+(ok?"":"　（尚不可行）")+'</small>':'')+'</button>';});
+ } else h+='<div class="seam"></div><div class="btns"><button class="btn pri" id="ok">继续</button></div>';
+ sfx("page");
+ const sh=ov(h,1);
+ sh.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+  const o=sc.o[+b.dataset.i];if(o.f)o.f(S);
+  if(o.to)showScene(o.to); else advance();});
+ const ok=sh.querySelector("#ok");
+ if(ok)ok.onclick=()=>{ if(sc.end){S.end=sc.end;S.scene=null;closeOv();endScreen();save();return;}
+   if(sc.to)showScene(sc.to); else advance(); };
+}
+function advance(){ S.ch++; S.scene=null; closeOv(); save(); render();
+ addLog("这一段江湖，你走完了。","v"); toast("章节推进"); }
+function battleIntro(sc){
+ const f=FOE[sc.b.foe];
+ const h='<h2>'+(sc.t||"交手")+'</h2><div class="seam gold"></div>'+
+  '<div class="story"><p class="no">对面已经站定了。</p>'+
+  '<p class="no muted">'+f.n+'　气血 '+fmt(foeNum(f).hp)+'　攻 '+fmt(foeNum(f).atk)+'　御 '+fmt(foeNum(f).def)+'　捷 '+foeNum(f).spd+'</p></div>'+
+  '<div class="btns"><button class="btn" id="wait">先不打</button><button class="btn pri" id="go">动手</button></div>';
+ const sh=ov(h);
+ sh.querySelector("#wait").onclick=()=>{closeOv();save();render();addLog("你退开了。此战可在「纪事」里重来。","");};
+ sh.querySelector("#go").onclick=()=>fight(S,sc.b.foe,null,null,sc.b);
+}
+function nameDialog(){
+ const h='<h2>起名</h2><div class="seam gold"></div><div class="story"><p>「没名字的人在江湖上活不长，」渡老说，「人家连怎么恨你都不知道。」</p></div>'+
+  '<div class="fld"><label>你叫什么</label><input id="nm" maxlength="8" placeholder="随手取一个" value=""></div>'+
+  '<div class="btns"><button class="btn pri" id="ok">就叫这个</button></div>';
+ const sh=ov(h);const inp=sh.querySelector("#nm");inp.focus();
+ const go=()=>{const v=inp.value.trim()||"无名";S.name=v;addLog("你给自己起了名字：<b>"+v+"</b>","y");advance();};
+ sh.querySelector("#ok").onclick=go; inp.onkeydown=e=>{if(e.key==="Enter")go();};
+}
+function sectDialog(){
+ let h='<h2>择一条路走</h2><div class="seam gold"></div><div class="story"><p class="no">挑了就别回头。</p></div>';
+ for(const k in SECT){const S2=SECT[k];
+  h+='<button class="pick" data-k="'+k+'"><b>'+S2.n+'</b> <span class="muted" style="font-size:12px">· '+S2.loc+'</span>'+
+   '<p>'+S2.d+'</p><p style="color:var(--thread)">'+S2.sty+'</p>'+
+   '<p>根基 '+Object.keys(S2.bias).map(x=>ATTR[x][0]+"+"+S2.bias[x]).join("　")+
+   '　武学：'+[S2.nei,S2.form,S2.shen].map(x=>ART[x].n).join("、")+'</p>'+
+   '<p style="color:var(--silk3)">入门：'+S2.join+'</p></button>';}
+ const sh=ov(h,1);
+ sh.querySelectorAll(".pick").forEach(b=>b.onclick=()=>{
+  const k=b.dataset.k,T=SECT[k];S.sect=k;
+  for(const a in T.bias)S.bonus[a]=(S.bonus[a]||0)+T.bias[a];
+  learn(S,T.nei);learn(S,T.form);learn(S,T.shen);
+  S.eq.nei=T.nei;S.eq.shen=T.shen;if(!S.eq.form.includes(T.form))S.eq.form.unshift(T.form);
+  S.eq.form=S.eq.form.slice(0,3);
+  unlock(S,T.loc==="磐钟山"?"panshan":T.loc==="云绣坊"?"yunxiu":T.loc==="枯河谷"?"kuhe":T.loc==="铁砧堡"?"tiezhen":T.loc==="剑冢野"?"jianzhong":"duanhe");
+  addLog("你拜入了 <b>"+T.n+"</b>。","y");showScene("c2b");});
+}
+/* ── 奇遇 ── */
+function showEvent(e){
+ sceneQ=e.id;
+ let h='<h2>'+e.t+'</h2><div class="seam gold"></div><div class="story">'+paras(e.tx)+'</div><div class="seam"></div>';
+ e.o.forEach((o,i)=>{const ok=!o.need||o.need(S);
+  h+='<button class="opt" data-i="'+i+'"'+(ok?"":" disabled")+'>'+o.t+'</button>';});
+ const sh=ov(h);
+ sh.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+  const o=e.o[+b.dataset.i];closeOv();o.f(S);save();render();});
+}
+/* ── 战斗界面 ── */
+function showBattle(){
+ const b=BT;let i=0;
+ // 战斗在开打前就已经算完了，所以血条要按日志里的快照回放，
+ // 否则一上来显示的就是打完之后的结果。
+ const bar=(x,side)=>'<div class="side"><div class="nm"><span>'+x.n+'</span>'+
+  '<span class="num" id="n'+side+'">'+x.mhp+'/'+x.mhp+'</span></div>'+
+  '<div class="track"><div class="fill hp" id="b'+side+'" style="width:100%"></div></div></div>';
+ const h='<h2>交手</h2><div class="seam gold"></div>'+
+  '<div class="vs">'+bar(b.A,"A")+'<span class="mid">对</span>'+bar(b.B,"B")+'</div>'+
+  '<div id="blog"></div><div class="seam"></div>'+
+  '<div class="btns"><button class="btn" id="skip">直接看结果</button><button class="btn pri" id="done" style="display:none">收</button></div>';
+ // 战斗不再弹窗：见闻那一栏直接变成战场
+ const st=$("#battle"),lgp=$("#log");
+ st.innerHTML=h;st.style.display="";if(lgp)lgp.style.display="none";
+ const sh=st,lg=sh.querySelector("#blog");
+ bgm("fight");sfx("gong");
+ const setHp=(side,hp,mhp)=>{
+  const f=sh.querySelector("#b"+side),t=sh.querySelector("#n"+side);
+  if(!f||hp==null)return;
+  f.style.width=cl(hp/mhp*100,0,100)+"%";
+  t.textContent=Math.max(0,Math.round(hp))+"/"+mhp;
+ };
+ const fin=()=>{ lg.innerHTML=b.log.map(l=>'<div class="bl-'+l[0]+'">'+l[1]+'</div>').join("")+
+   '<div class="seam"></div>'+b.spoil.map(s=>'<div class="bl-y">'+s+'</div>').join("");
+  lg.scrollTop=lg.scrollHeight;sh.querySelector("#skip").style.display="none";sh.querySelector("#done").style.display="";
+  setHp("A",b.A.hp,b.A.mhp);setHp("B",b.B.hp,b.B.mhp);};
+ const step=()=>{ if(i>=b.log.length){fin();return;}
+  const l=b.log[i++];lg.appendChild(El("div","bl-"+l[0],l[1]));lg.scrollTop=lg.scrollHeight;
+  if(/重手/.test(l[1]))sfx("clash");else if(l[0]==="g")sfx("sword");else if(l[0]==="h")sfx("hurt");
+  setHp("A",l[2],b.A.mhp);setHp("B",l[3],b.B.mhp);
+  b.tm=setTimeout(step,l[0]==="r"?260:150); };
+ step();
+ sh.querySelector("#skip").onclick=()=>{clearTimeout(b.tm);i=b.log.length;fin();};
+ sh.querySelector("#done").onclick=()=>{
+  clearTimeout(b.tm);const win=b.A.hp>0;
+  sfx(win?"win":"lose");bgm(bgmFor(S.loc));
+  st.innerHTML="";st.style.display="none";if(lgp)lgp.style.display="";
+  const sw=b.sceneWin,sl=b.sceneLose,ow=b.onWin,ol=b.onLose;BT=null;
+  if(win){ if(ow)ow(); if(sw){showScene(sw);save();return;} }
+  else { if(ol)ol(); if(sl){showScene(sl);save();return;}
+    if(sw){addLog("你输了。养好伤再来。","r");} }
+  save();render();};
+}
+/* ── 结局 ── */
+function endScreen(){
+ const h='<h2>江湖录</h2><div class="seam gold"></div><div class="story">'+
+  '<p class="no">'+S.name+'　'+(S.sect?SECT[S.sect].n:"散人")+'　'+REALM[S.lvl].n+'</p>'+
+  '<p class="no">在江湖上走了 '+S.days+' 日，交手 '+S.kills+' 场，遇奇事 '+S.evs+' 桩。</p>'+
+  '<p class="no">你选择了：<span style="color:var(--thread)">'+S.end+'</span></p>'+
+  '<p>故事到这里为止。但你若还想在这个江湖里走走，练功、游历、寻人，都还在。</p>'+
+  '<p class="no">（设置里留着「分岔前」的存档。想看看另外两个结局，从那里回去。）</p></div>'+
+  '<div class="btns"><button class="btn pri" id="ok">合上</button></div>';
+ ov(h).querySelector("#ok").onclick=()=>{closeOv();render();};
+}
+
+/* ═══════════ 主界面 ═══════════ */
+const DRAWER=[["wu","武学"],["bag","行囊"],["men","门派"],["map","舆图"],["ji","纪事"],["set","设置"]];
+
+function render(){ if(!S)return; renderChar(); renderMain(); renderLog();
+ const c=$("#clock"),v=$("#silver");
+ if(c)c.textContent="江湖第 "+(S.days+1)+" 日";
+ if(v)v.innerHTML="银两 <b>"+fmt(S.silver)+"</b>";
+}
+function renderMain(){
+ const W=$("#world"),D=$("#drawer");
+ if(!W)return;
+ W.innerHTML=worldHtml();
+ D.innerHTML=DRAWER.map(([k,n])=>'<button class="chip" data-open="'+k+'">'+n+
+   (k==="ji"&&chapReady()?'<span class="dot"></span>':'')+'</button>').join("");
+ bind();
+}
+/* 舆图即主界面：眼下这一处摆在当中，四邻连着它 */
+function worldHtml(){
+ const L=LOC[S.loc];
+ const node=d=>{
+  const t=nbr(d);
+  const glyph={n:"↑ 北",s:"↓ 南",e:"→ 东",w:"← 西"}[d];
+  if(!t){
+   const blind=(L.to||[]).some(x=>LOC[x]&&!locOpen(x)&&dirOf(S.loc,x)===d);
+   return blind?'<div class="node dim"><div class="ar">'+glyph+'</div><div class="nm">？</div>'+
+     '<div class="st">还没走通</div></div>':'<div></div>';
+  }
+  const T=LOC[t],who=(T.npc||[]).filter(x=>NPC[x]).length;
+  return '<div class="node" data-go="'+t+'"><div class="ar">'+glyph+'</div>'+
+   '<div class="nm">'+T.n+'</div><div class="st">'+
+   ((T.acts||[]).map(a=>ACT[a].n).join("·")||"—")+(T.shop?" 集市":"")+(who?" 有人":"")+'</div></div>';
+ };
+ return '<div class="wgrid">'+
+  '<div></div>'+node("n")+'<div></div>'+
+  node("w")+hubHtml()+node("e")+
+  '<div></div>'+node("s")+'<div></div></div>';
+}
+function hubHtml(){
+ const L=LOC[S.loc];
+ let h='<div class="hub"><div class="nm">'+L.n+'</div><div class="dd">'+L.d+'</div>';
+ const here=(L.npc||[]).filter(k=>NPC[k]);
+ if(here.length){h+='<div class="tagl">此 地 有 人</div><div class="wrow">';
+  for(const k of here)h+='<button class="chip" data-who="'+k+'">'+NPC[k].n+
+   (S.aff[k]?'　<b>'+S.aff[k]+'</b>':'')+'</button>';
+  h+='</div>';}
+ const acts=["sit","form","step",...(L.acts||[]),"walk"];
+ h+='<div class="tagl">手 上 的 活</div><div class="wrow">';
+ for(const a of acts)h+='<button class="chip'+(S.act===a?" on":"")+'" data-act="'+a+'">'+ACT[a].n+'</button>';
+ h+='</div>';
+ if(S.act==="form")h+=formPick();
+ if(chapReady())h+='<div class="wrow"><button class="chip on" data-ch="1">往下走　'+CHAP[S.ch].n+'</button></div>';
+ h+='<div class="wrow"><button class="chip" data-probe="1">探一探</button>'+
+  '<button class="chip" data-search="1">'+
+  (FIND[S.loc]&&!searched(S.loc)?"搜一搜":"再翻一遍")+'</button>'+
+  (L.shop?'<button class="chip" data-open="shop">上集市</button>':'')+
+  '<button class="chip" data-open="map">全图</button></div>';
+ h+='<div class="m" style="margin-top:8px">'+actRate()+'</div>';
+ return h+'</div>';
+}
+function openPanel(k){
+ const ttl={wu:"武学",bag:"行囊",men:"门派",map:"舆图",ji:"纪事",set:"设置"}[k]||"";
+ const sh=ov('<h2>'+ttl+'</h2><div class="seam gold"></div><div id="pbody">'+PANEL[k]()+'</div>'+
+  '<div class="seam"></div><div class="btns"><button class="btn pri" id="close">合上</button></div>',1);
+ sh.querySelector("#close").onclick=closeOv;
+ bind();
+}
+function repanel(){ // 抽屉开着时原地刷新，不关窗
+ const pb=$("#pbody");
+ if(pb&&PANEL[TAB]&&TAB!=="place"){pb.innerHTML=PANEL[TAB]();bind();}
+ else renderMain();
+}
+const kv=(a,b)=>'<div class="kv"><span>'+a+'</span><b class="num">'+b+'</b></div>';
+const STATN={atk:"攻",def:"御",hp:"气血",spd:"捷",crit:"重手",dodge:"闪身",pen:"破防",yuan:"缘",weave:"织度",qi:"内力",drain:"引力",bleed:"流血",stack:"剑意",stun:"震慑"};
+function weaveWord(w){return w<=-4?"（几乎不在布上）":w<0?"（线头松脱）":w<3?"（浅浅一缕）":w<6?"（渐渐织密）":w<12?"（与布相连）":"（几近无缝）";}
+function chapReady(){const c=CHAP[S.ch];return c&&S.lvl>=c.r&&!S.end;}
+function renderLog(){
+ if(!$("#log"))return;
+ $("#log").innerHTML=LOGS.slice(0,60).map(l=>'<div class="logline '+l.c+'"><i>'+l.d+'</i>'+l.t+'</div>').join("")||'<div class="empty">无事发生</div>';
+}
+function renderChar(){
+ if(!$("#char"))return;
+ const st=stats(S),need=expNeed(S.lvl),R=REALM[S.lvl],w=weaveTotal(S);
+ let h='<div class="ptitle">'+(S.sect?SECT[S.sect].n+"弟子":"无门无派")+'</div>'+
+  '<h2 class="pname">'+S.name+'</h2>'+
+  '<div class="psect">'+ORIGIN[S.orig].n+'</div><div class="seam gold"></div>'+
+  '<div class="kv"><span>境界</span><b>'+R.n+'</b></div>'+
+  '<div class="gauge"><div class="lab"><span>内力修为</span><b class="num">'+fmt(S.exp)+' / '+(S.lvl>=REALM.length-1?"—":fmt(need))+'</b></div>'+
+   '<div class="track"><div class="fill qi" style="width:'+(S.lvl>=REALM.length-1?100:cl(S.exp/need*100,0,100))+'%"></div></div></div>'+
+  '<div class="gauge"><div class="lab"><span>气血</span><b class="num">'+Math.floor(st.hp*(S.hpPct||1))+' / '+st.hp+'</b></div>'+
+   '<div class="track"><div class="fill hp" style="width:'+((S.hpPct||1)*100)+'%"></div></div></div>'+
+  '<div class="seam"></div><div class="hd">根基</div><div class="attrs">';
+ for(const k in ATTR)h+='<div title="'+ATTR[k][1]+'"><span>'+ATTR[k][0]+'</span><b class="num">'+st.a[k]+'</b></div>';
+ h+='</div><div class="seam"></div><div class="hd">身手</div>'+
+  kv("内力",st.qi)+kv("攻",fmt(st.atk))+kv("御",fmt(st.def))+kv("捷",st.spd)+
+  kv("重手",(st.crit*100).toFixed(1)+"%")+kv("闪身",(st.dodge*100).toFixed(1)+"%")+
+  '<div class="seam"></div>'+kv("战力",fmt(st.pow))+kv("织度",w+"　"+weaveWord(w));
+ $("#char").innerHTML=h;
+}
+function formPick(){
+ const ids=S.eq.form.filter(i=>S.arts[i]);if(!ids.length)return "";
+ return '<div class="here">'+ids.map(i=>'<button class="chip'+(S.actSub===i||(!S.actSub&&i===ids[0])?" on":"")+'" data-sub="'+i+'">'+ART[i].n+'</button>').join("")+'</div>';
+}
+function shopHtml(){
+ let h='<div class="hd">集市</div><div class="grid2">';
+ const sell=["jinchuang","peiyuan","dahuan","xisui","canye","wuwei","sanqi","bingcan","hantie"]
+   .concat(Object.keys(GEAR).filter(g=>GEAR[g].p>0&&GEAR[g].lv<=Math.max(2,S.lvl)));
+ for(const id of sell){const it=ITEM[id],g=GEAR[id];const o=it||g;if(!o||!o.p)continue;
+  h+='<div class="card"><div class="t">'+o.n+'</div><div class="d">'+
+   (o.d||Object.keys(g.a).map(k=>(STATN[k]||k)+" +"+g.a[k]).join("　"))+'</div>'+
+   '<div class="btns"><button class="btn sm" data-buy="'+id+'">买下 '+o.p+' 文</button></div></div>';}
+ h+='</div><div class="seam"></div><div class="hd">出货</div><div class="btns">'+
+  '<button class="btn sm" data-sellmat="1">卖掉所有药材矿料织料</button></div>';
+ return h;
+}
+const PANEL={};
+/* ── 修行 ── */
+/* ════════ 此地：主视图 ════════
+   不再是「修行标签页 + 江湖标签页」。你站在一个地方，
+   眼前有谁、有什么、能往哪儿走，都在这一屏上。 */
+function actRate(){
+ const R=rates(S),a=S.act,A=ACT[a];
+ const v=a==="sit"?R.sit.toFixed(1)+" 修为/息":a==="form"?R.form.toFixed(1)+" 招式/息":
+  a==="step"?R.step.toFixed(1)+" 身法/息":a==="walk"?(R.walk*3600).toFixed(0)+" 奇遇/时辰":
+  (R[a]*3600).toFixed(0)+" 件/时辰";
+ return "正在"+A.n+"　"+v+"　（关掉网页也不停）";
+}
+function padHtml(){
+ const cell=d=>{const t=nbr(d);
+  return t?'<div class="c"><button data-go="'+t+'"><b>'+DIRN[d]+'</b>'+LOC[t].n+'</button></div>'
+          :'<div class="c"><div class="non"></div></div>';};
+ return '<div class="pad">'+
+  '<div class="c"></div>'+cell("n")+'<div class="c"></div>'+
+  cell("w")+'<div class="c"><div class="here2">'+LOC[S.loc].n+'</div></div>'+cell("e")+
+  '<div class="c"></div>'+cell("s")+'<div class="c"></div></div>';
+}
+/* ═══════════ 说话 ═══════════
+   问得出东西的人才算人。有些话头要走到那一步才问得出口。 */
+const TALK={
+ dulao:[
+  {id:"way",t:"「我该往哪儿去？」",key:1},
+  {id:"self",t:"「你在这条河上多久了？」",once:3,
+   tx:["「四十年。」他把烟锅在船帮上磕了三下，「我爹撑到六十二，我接的手。」",
+       "「这河从前不是这个样子。从前水是绿的，能看见底下的石头。现在你看——」他拿桨拨了一下，水面上那层东西散开，又慢慢合上了。"]},
+  {id:"me",t:"「你记得我么？」",once:2,
+   tx:["他抬眼看你，看了很久。你能看出他在努力。","「我记得所有上过我船的人。」他终于说，「我记得你上过。我就是想不起你长什么样——你现在站在我跟前，我也想不起。」",
+       "他低下头去卷烟，手有点抖：「我从前没这个毛病。」"]},
+  {id:"river",t:"「洛水为什么断流？」",once:2,
+   tx:["「没人说得清。」他说，「断了七天，一滴不流。河床上全是人——找东西的，捞尸的，还有跪着的。」",
+       "「第七天夜里我在船上睡着了。醒来水回来了，船底下压着三个人。都没伤，都死了。」",
+       "他顿了顿：「我记得他们的脸。三个我都记得。」"]},
+  {id:"dream",t:"「你也梦见过那个白头发的女人？」",need:s=>s.flags.dream2||s.ch>=2,once:3,
+   tx:["他手上的动作停了。","「梦见过。她在缝东西。」他说，「我这辈子没见过缝得那么快的手。」",
+       "「奇的是——」他看着河面，「她一边缝，一边看着我。像是在等我把身上什么东西交出去。」"]},
+  {id:"scar",t:"（给他看腕上的疤）",need:s=>s.ch>=1,once:4,
+   tx:["他捧起你的手腕，凑到眼前。船晃了一下，他扶稳了。","「这不是刀口。」他说得很慢，「这是缝过的。缝完了又拆了。」",
+       "他松开手，在裤子上擦了擦：「谁给你拆的？」你说不知道。他说：「那你最好别想起来。」"]},
+ ],
+ pei:[
+  {id:"self",t:"「你从前是做什么的？」",once:2,
+   tx:["「捕头。」他说，「县里最年轻的那个。」他把碗推开，「现在是这个。」"]},
+  {id:"case",t:"「那三千零一十七个人，你验过？」",need:s=>s.ch>=3,once:4,
+   tx:["他忽然清醒了。","「七天。」他说，「我在验尸房里待了七天，出来的时候不认得自己老婆。」",
+       "「三千零一十七个，没有一个有伤。每一个嘴里都有一根线。一寸，两头是齐的——你听清楚，是齐的。不是扯断的，是剪的。」",
+       "他盯着桌面：「什么人会给死人剪线头。」"]},
+  {id:"drink",t:"「为什么喝成这样？」",once:2,
+   tx:["「因为不喝就记得。」他说得很平常，像在说天气。","「记得没用。那卷宗我背得下来，一个名字不差。背下来又怎么样？」"]},
+  {id:"advice",t:"「江湖上该防着谁？」",once:2,
+   tx:["「防不着。」他说，「你要防的那个不在江湖上。」他打了个酒嗝，「他在布上。」你问什么布。他摆摆手，不说了。"]},
+ ],
+ heng:[
+  {id:"self",t:"「你手上那些针孔是怎么来的？」",once:2,
+   tx:["「三十九个。」她把手摊开给你看，「学绣的规矩，扎错一针留一个孔，好让自己记住。」",
+       "「师父说扎满四十个就出师。我留着最后一个。」"]},
+  {id:"last",t:"「第四十个留给谁？」",once:3,
+   tx:["她把针收进针囊里，很久没说话。","「留给该留的人。」她说，「我娘死在七日梦那年。她的针囊里也是三十九根——第四十个位置空着，绒布是压过的。」",
+       "「有人把那一根抽走了。」"]},
+  {id:"embroider",t:"「绣人像有什么讲究？」",need:s=>s.ch>=4,once:3,
+   tx:["「眼睛最后绣。」她说，「先绣了眼睛，人就活了，剩下的部分它自己不肯长。」",
+       "她看了你一眼：「你别笑。缀云楼三代人都这么说。」"]},
+ ],
+ hanshan:[
+  {id:"self",t:"「你为什么不受戒？」",once:2,
+   tx:["「记不住经。」他说，「念过就散，像水泼在石头上。」","「寺里留我敲钟。钟不用记，它自己会响。」"]},
+  {id:"bell",t:"「一天一百零八下，为什么？」",once:2,
+   tx:["「一百零八种烦恼，敲一下去一样。」他停了停，「敲完了第二天又长回来。所以要天天敲。」"]},
+  {id:"big",t:"「那口大钟为什么不敲？」",need:s=>s.ch>=2,once:3,
+   tx:["他沉默了很久。","「师父说那口钟里有东西。」他说，「敲响了它就出来。」",
+       "「我上山那年问过一次，师父打了我。他从来不打人。」"]},
+ ],
+ zhuo:[
+  {id:"self",t:"「你的手是怎么伤的？」",once:2,
+   tx:["他把左手举起来给你看，三根指头。","「换了一把好刀。」他说，「划算。」你问刀在哪儿。他说：「埋了。跟着人一起埋的。」"]},
+  {id:"iron",t:"「什么样的铁算好铁？」",once:2,
+   tx:["「肯听话的。」他说，「铁跟人一样，有的你怎么打它都不服，有的你还没动它就软了。都不成器。」",
+       "「要那种——你打它，它疼，但它认。」"]},
+  {id:"forge",t:"「能给我打一把兵器么？」",need:s=>(s.aff.zhuo||0)>=12,once:4,
+   tx:["他从炉边摸出一块坯子，扔给你。","「先拿着。」他说，「什么时候你自己知道要一把什么样的，再来找我。」",
+       "「现在你不知道。你眼神告诉我了。」"],f:s=>{item(s,"hantie",3);}},
+ ],
+ xie:[
+  {id:"who",t:"「你是什么东西？」",need:s=>s.ch>=5,
+   tx:["「一个没被缝上的。」他说，「跟你一样。」","他站的地方没有影子。他好像很习惯了。"]},
+ ],
+ sang:[
+  {id:"why",t:"「你为什么要杀那三千人？」",need:s=>s.ch>=7,
+   tx:["她的手没有停。","「我没有杀他们。」她说，「我取了他们的线。人没有线就散了——散不是死。」",
+       "针穿过布，一下，一下：「你要是有别的法子，说出来。我听。」"]},
+ ],
+};
+function told(k,id){return (S.told||{})[k+":"+id];}
+function talkTo(k,id){
+ const T=(TALK[k]||[]).find(x=>x.id===id);if(!T)return;
+ if(T.key){ // 渡老指路——剧情推进就在这句话里
+  if(S.end){replyBox(k,["「都完了。」他说，「你还想往哪儿去。」"]);return;}
+  if(chapReady()){
+   replyBox(k,["他用桨指了指岸上。","「你先得知道自己是谁。」他说，「这事我帮不上——得你自己往前走一段。」"],
+    ()=>{closeOv();showScene(S.scene&&SC[S.scene]?S.scene:CHAP[S.ch].at);});
+   return;
+  }
+  const c=CHAP[S.ch];
+  replyBox(k,["他摇摇头。","「还不到时候。」他说，「你现在这个样子出去，是给人添麻烦。」",
+   c?"「等你" + REALM[c.r].n + "了再来问我。」":"「往后的事，我也不知道了。」"]);
+  return;
+ }
+ if(T.need&&!T.need(S)){replyBox(k,["他看了你一眼，没接话。"]);return;}
+ S.told=S.told||{};
+ const first=!told(k,id);
+ if(first){S.told[k+":"+id]=1;
+  if(T.once)aff(S,k,T.once>2?2:1);
+  if(T.f)T.f(S);
+  gainExp(S,60+S.lvl*40);}
+ replyBox(k,T.tx);
+ save();
+}
+function replyBox(k,tx,then){
+ const sh=ov('<h2>'+NPC[k].n+'</h2><div class="seam gold"></div>'+
+  '<div class="story">'+paras(tx)+'</div><div class="seam"></div>'+
+  '<div class="btns"><button class="btn pri" id="back">'+(then?"那就走一趟":"嗯")+'</button></div>');
+ sh.querySelector("#back").onclick=then||(()=>{closeOv();showNpc(k);});
+}
+/* 走到人跟前 */
+function showNpc(k){
+ const v=S.aff[k]||0,can=VISIT[k],g=GIFT[k],have=g?(S.bag[g.it]||0):0;
+ const left=can?visitCd()-(Date.now()-((S.visit&&S.visit[k])||0)):0;
+ let h='<h2>'+NPC[k].n+'</h2><div class="seam gold"></div>'+
+  '<div class="story"><p class="no muted">'+NPC[k].t+'</p><p>'+NPC[k].d+'</p></div>'+
+  '<div class="track" style="margin:9px 0 4px"><div class="fill exp" style="width:'+cl(v*2.5,0,100)+'%"></div></div>'+
+  '<div class="m">交情 '+v+'</div>';
+ const tp=(TALK[k]||[]).filter(x=>!x.need||x.need(S)||told(k,x.id));
+ if(tp.length){h+='<div class="seam"></div><div class="tagl">说 话</div>';
+  for(const x of tp)h+='<button class="opt" data-talk="'+k+'|'+x.id+'">'+x.t+
+   (told(k,x.id)?'<small>问过了</small>':(x.key?'':'<small>没问过</small>'))+'</button>';}
+ h+='<div class="seam"></div><div class="btns">';
+ if(!can)h+='<span class="m">'+(k==="xie"?"他不与你叙旧。他只是在这里。":k==="sang"?"她不抬头。手上的活没停。":"此人不与你叙旧。")+'</span>';
+ else if(v>=40)h+='<span class="m">已是至交。</span>';
+ else if(left>0)h+='<span class="m">刚见过。再等 '+Math.ceil(left/60000)+' 分钟。</span>';
+ else{h+='<button class="btn pri" data-visit="'+k+'">叙旧</button>';
+  if(g)h+='<button class="btn'+(have?'':' ')+'" data-gift="'+k+'"'+(have?'':' disabled')+'>送'+ITEM[g.it].n+'（'+have+'）</button>';}
+ h+='<button class="btn" id="close">走开</button></div>';
+ ov(h).querySelector("#close").onclick=closeOv;
+ bind();
+}
+/* ════════ 抽屉 ════════ */
+PANEL.shop=()=>shopHtml();
+PANEL.wu=()=>{
+ const kinds=[["nei","内功"],["form","招式"],["shen","身法"]];
+ let h="";
+ for(const [kd,nm] of kinds){
+  const ids=Object.keys(ART).filter(id=>ART[id].k===kd&&S.arts[id]);
+  h+='<div class="hd">'+nm+'</div>';
+  if(!ids.length){h+='<div class="empty">还没有</div>';continue;}
+  h+='<div class="grid2">';
+  for(const id of ids){const A=ART[id],lv=artLv(S,id),on=kd==="form"?S.eq.form.includes(id):S.eq[kd]===id;
+   const ex=S.arts[id].exp,nd=artNeed(id,lv);
+   h+='<div class="card '+(on?"sel":"")+'"><div class="t">'+A.n+'</div><div class="d">'+A.d+'</div>'+
+    '<div class="m">第 '+lv+' 层　上限 '+A.cap+'</div>'+
+    '<div class="track"><div class="fill exp" style="width:'+cl(ex/nd*100,0,100)+'%"></div></div>'+
+    '<div class="btns">'+(on
+      ?(kd==="form"?'<button class="btn sm" data-unform="'+id+'">撤下</button>':'<span class="m">已运</span>')
+      :'<button class="btn sm pri" data-eq="'+kd+'|'+id+'">'+(kd==="form"?"带上":"改运此功")+'</button>')+
+    '</div></div>';}
+  h+='</div>';
+ }
+ return h+'<div class="seam"></div><div class="muted" style="font-size:13px">招式最多带三路。带上的招式会在交手时自己使出来。</div>';
+};
+PANEL.bag=()=>{
+ let h='<div class="hd">身上穿戴</div><div class="grid2">';
+ const slots=[["weapon","兵器"],["armor","衣甲"],["boots","鞋履"],["charm","随身"]];
+ for(const [sl,nm] of slots){const id=S.gear[sl];
+  h+='<div class="card"><div class="t">'+nm+'</div>'+
+   '<div class="m">'+(id?GEAR[id].n:"空着")+'</div>'+
+   (id?'<div class="d">'+Object.keys(GEAR[id].a).map(x=>x+" +"+GEAR[id].a[x]).join("　")+'</div>':'')+
+   '</div>';}
+ h+='</div>';
+ const spare=S.own.filter(id=>GEAR[id]&&S.gear[GEAR[id].s]!==id);
+ if(spare.length){h+='<div class="seam"></div><div class="hd">箱底</div><div class="grid2">';
+  for(const id of spare){const G2=GEAR[id];
+   h+='<div class="card"><div class="t">'+G2.n+'</div>'+
+    '<div class="d">'+Object.keys(G2.a).map(x=>x+" +"+G2.a[x]).join("　")+'</div>'+
+    '<div class="btns"><button class="btn sm pri" data-wear="'+id+'">换上</button></div></div>';}
+  h+='</div>';}
+ const ids=Object.keys(S.bag).filter(id=>ITEM[id]&&S.bag[id]>0);
+ h+='<div class="seam"></div><div class="hd">行囊</div>';
+ if(!ids.length)h+='<div class="empty">空空如也</div>';
+ else{h+='<div class="grid2">';
+  for(const id of ids){const I=ITEM[id];
+   h+='<div class="card"><div class="t">'+I.n+' ×'+S.bag[id]+'</div><div class="d">'+(I.d||"")+'</div>'+
+    '<div class="btns">'+
+    (I.use||I.hp||I.expPct||I.artPct?'<button class="btn sm pri" data-use="'+id+'">用一个</button>':'')+
+    (I.p?'<button class="btn sm" data-sell="'+id+'">卖 '+I.p+' 文</button>':'')+
+    '</div></div>';}
+  h+='</div>';}
+ return h;
+};
+PANEL.men=()=>{
+ let h="";
+ if(!S.sect)h+='<div class="empty">你还没有门派。江湖上多的是没有师承的人。</div>';
+ else{const T=SECT[S.sect];
+  h+='<div class="hd">'+T.n+'</div><div class="card"><div class="d">'+T.d+'</div>'+
+   '<div class="m">'+T.sty+'</div></div>'+
+   '<div class="seam"></div><div class="hd">镇派武学</div><div class="grid2">';
+  for(const id of [T.nei,T.form,T.shen]){const A=ART[id],a=S.arts[id];
+   h+='<div class="card"><div class="t">'+A.n+'</div><div class="d">'+A.d+'</div>'+
+    '<div class="m">'+(a?"第 "+artLv(S,id)+" 层":"未习")+'</div></div>';}
+  h+='</div>';}
+ h+='<div class="seam"></div><div class="hd">江湖故人</div><div class="grid2">';
+ let any=0;
+ for(const k in NPC){const v=S.aff[k]||0;if(!v&&k!=="dulao")continue;any=1;
+  const at=Object.keys(LOC).find(x=>(LOC[x].npc||[]).includes(k));
+  h+='<div class="card"><div class="t">'+NPC[k].n+'</div>'+
+   '<div class="m">'+NPC[k].t+(at?'　·　'+LOC[at].n:'')+'</div>'+
+   '<div class="track" style="margin-top:7px"><div class="fill exp" style="width:'+cl(v*2.5,0,100)+'%"></div></div>'+
+   '<div class="m">交情 '+v+'</div></div>';}
+ if(!any)h+='<div class="empty">还没有谁记得你。</div>';
+ h+='</div><div class="seam"></div><div class="m">交情总计 '+totalAff(S)+'　织度 '+weaveTotal(S)+'　'+weaveWord(weaveTotal(S))+'</div>';
+ return h;
+};
+PANEL.map=()=>{
+ const open=S.locs.filter(k=>LOC[k]);
+ const xs=open.map(k=>LOC[k].x),ys=open.map(k=>LOC[k].y);
+ const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+ let h='<div class="card"><div class="d">上北下南。只能沿路走，远处一程一程过去，路上会遇见事。有些去处不在图上——得自己翻出来。</div></div>'+
+  '<div class="mapg" style="grid-template-columns:repeat('+(x1-x0+1)+',minmax(78px,1fr))">';
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+  const k=open.find(k=>LOC[k].x===x&&LOC[k].y===y);
+  if(!k){h+='<div class="cell off">·</div>';continue;}
+  const st=stepsTo(k);
+  h+='<div class="cell '+(S.loc===k?"cur":"on")+'"'+(S.loc===k?'':' data-go="'+k+'"')+'>'+
+   LOC[k].n+(S.loc===k?'':'<br><span style="opacity:.5;font-size:11px">'+(st<0?"不通":st+" 程")+'</span>')+'</div>';}
+ return h+'</div>';
+};
+PANEL.ji=()=>{
+ let h='<div class="hd">江湖纪事</div>';
+ CHAP.forEach((c,i)=>{
+  const done=S.ch>i,now=S.ch===i,ok=now&&S.lvl>=c.r;
+  h+='<div class="card '+(ok?"sel":"")+'"><div class="row"><div class="g">'+
+   '<div class="t">'+c.n+'</div><div class="d">'+(done||now?c.d:"——")+'</div></div>'+
+   '<div>'+(done?'<span class="tag jade">已了</span>':now?(ok?'<span class="tag gold">可继</span>':'<span class="tag red">需 '+REALM[c.r].n+'</span>'):'<span class="tag">未至</span>')+'</div></div>'+
+   (ok?'<div class="btns"><button class="btn pri" data-ch="1">往下走</button></div>':"")+'</div>';});
+ if(S.end)h+='<div class="card"><div class="t">你的选择：'+S.end+'</div><div class="d">故事已终，江湖仍在。</div></div>';
+ h+='<div class="seam"></div><div class="hd">行迹</div>'+
+  kv("在江湖上",(S.days+1)+" 日")+kv("交手",S.kills+" 场")+kv("奇遇",S.evs+" 桩")+
+  kv("交情总计",totalAff(S))+kv("织度",weaveTotal(S));
+ return h;
+};
+/* ── 设置 ── */
+PANEL.set=()=>{
+ return '<div class="hd">存档格</div>'+
+ '<div class="card"><div class="d">四个独立的格子。结局不可回头，分岔之前存一格，可以把三个结局都看完。</div></div>'+
+ slotCards()+
+ (FORKM?'<div class="card"><div class="t">分岔前（自动）</div>'+
+  '<div class="m">'+FORKM.name+'　'+(REALM[FORKM.lvl]?REALM[FORKM.lvl].n:"")+'　存于 '+ago(FORKM.t)+'</div>'+
+  '<div class="d">走到最后那道选择题时，此处自动留了一手。读它可以回去改选。</div>'+
+  '<div class="btns" style="margin-top:7px"><button class="btn sm pri" data-forkload="1">回到分岔前</button></div></div>':'')+
+ '<div class="seam"></div><div class="hd">自动存档</div>'+
+ '<div class="card"><div class="d">进度会自动存在浏览器里（若此处不支持，则只存在本次会话中）。你也可以把存档抄下来，换个地方接着玩。</div>'+
+ '<div class="btns"><button class="btn" data-exp="1">导出存档</button><button class="btn" data-imp="1">导入存档</button>'+
+ '<button class="btn" data-save="1">立刻存一次</button></div>'+
+ '<div class="m" id="sst">'+(hasStore?"自动存档：开":"自动存档：不可用（请用导出）")+'</div></div>'+
+ '<div class="seam"></div><div class="hd">声</div>'+
+ '<div class="card"><div class="d">琴声与响动都是当场算出来的，没有一个音频文件。第一次点任何地方才会响——浏览器的规矩。</div>'+
+ '<div class="btns"><button class="btn'+(AU.on?" pri":"")+'" data-au="on">'+(AU.on?"有声":"静音")+'</button></div>'+
+ '<div class="m" style="margin-top:9px">琴　<input type="range" id="vb" min="0" max="100" value="'+Math.round(AU.vb*100)+'" style="vertical-align:middle;width:150px"></div>'+
+ '<div class="m" style="margin-top:5px">响　<input type="range" id="vs" min="0" max="100" value="'+Math.round(AU.vs*100)+'" style="vertical-align:middle;width:150px"></div>'+
+ '</div>'+
+ '<div class="seam"></div><div class="hd">重来</div>'+
+ '<div class="card"><div class="d">洗去这一世，从渡口重新醒来。不可撤销。</div>'+
+ '<div class="btns"><button class="btn" data-reset="1">重开一世</button></div></div>'+
+ '<div class="seam"></div><div class="hd">关于</div>'+
+ '<div class="card"><div class="d">《天衣 · 无缝的江湖》是一个纯文字放置武侠。世界观、门派、武学、人物、剧情皆为原创，与任何武侠小说无涉。'+
+ '<br><br>玩法上向《放置江湖》致意：离线也长功、以文字承载战斗与奇遇、门派与游历驱动成长。</div></div>';
+};
+/* ═══════════ 事件绑定 ═══════════ */
+function bind(){
+ const M=document;
+ M.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{S.act=b.dataset.act;if(S.act!=="form")S.actSub=null;save();renderMain();addLog("你开始"+ACT[S.act].n+"。","");});
+ M.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>{S.actSub=b.dataset.sub;save();renderMain();});
+ M.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{
+  if($("#ov").innerHTML){closeOv();TAB="place";}
+  travel(b.dataset.go);
+  const L=LOC[S.loc];if(!L.acts.includes(S.act)&&["herb","mine","silk"].includes(S.act)){
+   S.act="sit";addLog("此地做不得那桩活计，你改为打坐。","m");}
+  save();renderMain();});
+ M.querySelectorAll("[data-fight]").forEach(b=>b.onclick=()=>fight(S,b.dataset.fight));
+ M.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>{
+  const [k,id]=b.dataset.eq.split("|");
+  if(k==="form"){if(S.eq.form.length>=3)S.eq.form.shift();S.eq.form.push(id);}
+  else S.eq[k]=id;
+  save();repanel();renderChar();});
+ M.querySelectorAll("[data-unform]").forEach(b=>b.onclick=()=>{
+  S.eq.form=S.eq.form.filter(x=>x!==b.dataset.unform);save();repanel();renderChar();});
+ M.querySelectorAll("[data-wear]").forEach(b=>b.onclick=()=>{
+  const g=GEAR[b.dataset.wear];S.gear[g.s]=b.dataset.wear;save();repanel();renderChar();});
+ M.querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>{useItem(b.dataset.use);repanel();});
+ M.querySelectorAll("[data-visit]").forEach(b=>b.onclick=()=>visitNpc(b.dataset.visit));
+ M.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
+ M.querySelectorAll("[data-search]").forEach(b=>b.onclick=searchHere);
+ M.querySelectorAll("[data-probe]").forEach(b=>b.onclick=probe);
+ M.querySelectorAll("[data-talk]").forEach(b=>b.onclick=()=>{
+  const [k,id]=b.dataset.talk.split("|");closeOv();talkTo(k,id);});
+ M.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{TAB=b.dataset.open;openPanel(TAB);});
+ M.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>showNpc(b.dataset.who));
+ M.querySelectorAll("[data-au]").forEach(b=>b.onclick=()=>{
+  auSet("on",!AU.on);if(AU.on){auResume();bgm(bgmFor(S.loc));}else bgmStop();
+  S.au={on:AU.on,vb:AU.vb,vs:AU.vs};save(true);renderMain();});
+ const vb=M.querySelector("#vb"),vs=M.querySelector("#vs");
+ if(vb)vb.oninput=()=>{auSet("vb",vb.value/100);S.au={on:AU.on,vb:AU.vb,vs:AU.vs};save();};
+ if(vs)vs.onchange=()=>{auSet("vs",vs.value/100);S.au={on:AU.on,vb:AU.vb,vs:AU.vs};sfx("sword");save();};
+ M.querySelectorAll("[data-sell]").forEach(b=>b.onclick=()=>{
+  const id=b.dataset.sell;if(takeItem(S,id,1)){S.silver+=ITEM[id].p;save();repanel();render();}});
+ M.querySelectorAll("[data-sellmat]").forEach(b=>b.onclick=()=>{
+  let n=0;for(const id in S.bag){const it=ITEM[id];if(it&&["药材","矿料","织料"].includes(it.t)){n+=it.p*S.bag[id];delete S.bag[id];}}
+  S.silver+=n;addLog("卖了个干净，得银 "+fmt(n)+" 文。","g");save();renderMain();render();});
+ M.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{
+  const id=b.dataset.buy,o=ITEM[id]||GEAR[id];if(S.silver<o.p){toast("银两不够");return;}
+  sfx("coin");
+  S.silver-=o.p; if(ITEM[id])item(S,id,1); else gearGain(S,id);
+  save();renderMain();render();});
+ M.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{
+  showScene(S.scene&&SC[S.scene]?S.scene:CHAP[S.ch].at);});
+ M.querySelectorAll("[data-exp]").forEach(b=>b.onclick=exportSave);
+ M.querySelectorAll("[data-slotsave]").forEach(b=>b.onclick=()=>{
+  const i=+b.dataset.slotsave;
+  if(SLOTS[i])ask("覆盖"+SLOTNAME[i],"这一格里已经有一个人了。存进去，他就没有了。","覆盖",()=>slotSave(i));
+  else slotSave(i);});
+ M.querySelectorAll("[data-slotload]").forEach(b=>b.onclick=()=>{
+  const i=+b.dataset.slotload;
+  ask("读取"+SLOTNAME[i],"眼下这一世会被放下。若还想留着，先存进别的格子。","读取",()=>slotLoad(i));});
+ M.querySelectorAll("[data-forkload]").forEach(b=>b.onclick=()=>{
+  ask("回到分岔前","眼下这一世会被放下，退回到你做最后那个选择之前。","回去",()=>forkLoad());});
+ M.querySelectorAll("[data-slotwipe]").forEach(b=>b.onclick=()=>{
+  const i=+b.dataset.slotwipe;
+  ask("抹去"+SLOTNAME[i],"抹了就回不来了。","抹去",()=>slotWipe(i));});
+ M.querySelectorAll("[data-imp]").forEach(b=>b.onclick=importSave);
+ M.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{save(true);toast("已存");});
+ M.querySelectorAll("[data-reset]").forEach(b=>b.onclick=()=>{
+  const sh=ov('<h2>重开一世</h2><div class="seam gold"></div><div class="story"><p>这一世的功夫、故人、名字，都不再有人记得。</p></div>'+
+   '<div class="btns"><button class="btn" id="no">再想想</button><button class="btn pri" id="yes">重开</button></div>');
+  sh.querySelector("#no").onclick=closeOv;
+  sh.querySelector("#yes").onclick=async()=>{try{await window.storage.delete(KEY);}catch(e){} S=null;LOGS=[];closeOv();$("#app").style.display="none";prologue();};});
+}
+function useItem(id){
+ const it=ITEM[id];if(!it.use)return;
+ if(!takeItem(S,id,1))return;
+ const u=it.use;
+ if(u.hp){S.hpPct=cl((S.hpPct||1)+u.hp,0,1);addLog("敷了药，气血回了些。","g");}
+ if(u.expPct){gainExp(S,Math.max(400,expNeed(S.lvl)*u.expPct));addLog("药力化开，内力修为大进。","g");}
+ if(u.attr){const k=pick(Object.keys(ATTR));gain(S,k,1);}
+ if(u.art){
+  const ids=Object.keys(S.arts).filter(i=>S.arts[i].lv<ART[i].cap);
+  if(!ids.length){addLog("你已无可参悟之处。","");}
+  else{const t=pick(ids);artExp(S,t,artNeed(t,S.arts[t].lv)*u.artPct);addLog("参悟残卷，<b>"+ART[t].n+"</b> 大有精进。","y");}
+ }
+ save();renderMain();render();
+}
+/* ═══════════ 存档 ═══════════ */
+const KEY="tianyi:save1";
+let saveT=0,savePending=false;
+function pack(){return JSON.stringify({s:S,l:LOGS.slice(0,40),t:Date.now()});}
+async function save(force){
+ if(!S)return;S.t=Date.now();
+ if(!hasStore)return;
+ if(!force&&Date.now()-saveT<15000){savePending=true;return;}
+ saveT=Date.now();savePending=false;
+ try{await window.storage.set(KEY,pack());}catch(e){}
+}
+async function load(){
+ if(!hasStore)return null;
+ try{const r=await window.storage.get(KEY);if(!r||!r.value)return null;return JSON.parse(r.value);}catch(e){return null;}
+}
+/* ───────── 存档格 ───────── */
+const SLOTN=4, SLOTNAME=["第一格","第二格","第三格","第四格"];
+const slotKey=i=>"tianyi:slot"+i;
+let SLOTS=new Array(SLOTN).fill(null);
+function slotMeta(d){const s=d.s||{};
+ return {name:s.name||"无名",lvl:s.lvl||0,ch:s.ch||0,sect:s.sect||null,
+  silver:s.silver||0,kills:s.kills||0,end:s.end||null,t:d.t||s.t||Date.now()};}
+async function loadSlots(){
+ if(!hasStore){SLOTS=new Array(SLOTN).fill(null);return;}
+ for(let i=0;i<SLOTN;i++){
+  try{const r=await window.storage.get(slotKey(i));
+   SLOTS[i]=(r&&r.value)?slotMeta(JSON.parse(r.value)):null;}catch(e){SLOTS[i]=null;}}
+}
+async function slotSave(i){
+ if(!S)return;
+ if(!hasStore){toast("此处不支持存档格，请改用导出");return;}
+ S.t=Date.now();
+ try{await window.storage.set(slotKey(i),pack());await loadSlots();renderMain();
+  toast("已存入"+SLOTNAME[i]);}catch(e){toast("存不进去");}
+}
+async function slotLoad(i){
+ if(!hasStore)return;
+ try{const r=await window.storage.get(slotKey(i));
+  if(!r||!r.value){toast("这一格是空的");return;}
+  const d=JSON.parse(r.value);
+  S=d.s;LOGS=d.l||[];migrate();
+  await save(true);render();toast("已回到"+SLOTNAME[i]);}
+ catch(e){toast("这一格读不出来");}
+}
+async function slotWipe(i){
+ if(!hasStore)return;
+ try{await window.storage.delete(slotKey(i));}catch(e){}
+ await loadSlots();renderMain();toast(SLOTNAME[i]+"已抹去");
+}
+function ago(t){const d=Date.now()-(t||0);const m=Math.floor(d/60000);
+ if(m<1)return "刚刚";if(m<60)return m+" 分钟前";
+ const h=Math.floor(m/60);if(h<24)return h+" 小时前";
+ const y=Math.floor(h/24);return y+" 天前";}
+function ask(title,body,okTxt,fn){
+ const sh=ov('<h2>'+title+'</h2><div class="seam gold"></div>'+
+  '<div class="story"><p class="no">'+body+'</p></div>'+
+  '<div class="btns"><button class="btn" id="no">算了</button>'+
+  '<button class="btn pri" id="ok">'+okTxt+'</button></div>');
+ sh.querySelector("#no").onclick=closeOv;
+ sh.querySelector("#ok").onclick=()=>{closeOv();fn();};
+}
+function slotCards(){
+ let h='<div class="grid2">';
+ for(let i=0;i<SLOTN;i++){const m=SLOTS[i];
+  h+='<div class="card"><div class="t">'+SLOTNAME[i]+'</div>';
+  if(m){
+   const line=m.name+"　"+(REALM[m.lvl]?REALM[m.lvl].n:"淬体")+
+     (m.sect&&SECT[m.sect]?"　"+SECT[m.sect].n:"")+
+     (m.end?"　【"+m.end+"】":"　第 "+(m.ch+1)+" 章");
+   h+='<div class="m">'+line+'</div>'+
+      '<div class="m">银两 '+fmt(m.silver)+'　存于 '+ago(m.t)+'</div>'+
+      '<div class="btns" style="margin-top:7px">'+
+      '<button class="btn sm pri" data-slotload="'+i+'">读取</button>'+
+      '<button class="btn sm" data-slotsave="'+i+'">覆盖</button>'+
+      '<button class="btn sm" data-slotwipe="'+i+'">抹去</button></div>';
+  } else {
+   h+='<div class="m">空</div><div class="d">还没有人在这里落过脚。</div>'+
+      '<div class="btns" style="margin-top:7px">'+
+      '<button class="btn sm" data-slotsave="'+i+'">存入</button></div>';
+  }
+  h+='</div>';}
+ return h+'</div>';
+}
+const FORKKEY="tianyi:fork";
+let FORKM=null;
+async function loadFork(){
+ if(!hasStore){FORKM=null;return;}
+ try{const r=await window.storage.get(FORKKEY);
+  FORKM=(r&&r.value)?slotMeta(JSON.parse(r.value)):null;}catch(e){FORKM=null;}
+}
+async function forkSnap(){
+ if(!S||!hasStore||S.end)return;
+ S.t=Date.now();
+ try{await window.storage.set(FORKKEY,pack());await loadFork();}catch(e){}
+}
+async function forkLoad(){
+ if(!hasStore)return;
+ try{const r=await window.storage.get(FORKKEY);
+  if(!r||!r.value){toast("没有分岔存档");return;}
+  const d=JSON.parse(r.value);S=d.s;LOGS=d.l||[];migrate();
+  await save(true);render();toast("回到了分岔之前");}
+ catch(e){toast("读不出来");}
+}
+function exportSave(){
+ const code=btoa(unescape(encodeURIComponent(pack())));
+ const sh=ov('<h2>导出存档</h2><div class="seam gold"></div><div class="story"><p class="no">全选复制，收好。</p></div>'+
+  '<div class="fld"><textarea id="tx" rows="7" readonly></textarea></div>'+
+  '<div class="btns"><button class="btn" id="cp">复制</button><button class="btn pri" id="ok">收</button></div>');
+ sh.querySelector("#tx").value=code;
+ sh.querySelector("#cp").onclick=()=>{const t=sh.querySelector("#tx");t.select();
+  try{navigator.clipboard.writeText(code);toast("已复制");}catch(e){document.execCommand("copy");toast("已复制");}};
+ sh.querySelector("#ok").onclick=closeOv;
+}
+function importSave(){
+ const sh=ov('<h2>导入存档</h2><div class="seam gold"></div><div class="story"><p class="no">粘进来，当前进度会被覆盖。</p></div>'+
+  '<div class="fld"><textarea id="tx" rows="7" placeholder="存档码"></textarea></div>'+
+  '<div class="btns"><button class="btn" id="no">算了</button><button class="btn pri" id="ok">导入</button></div>');
+ sh.querySelector("#no").onclick=closeOv;
+ sh.querySelector("#ok").onclick=()=>{
+  try{const d=JSON.parse(decodeURIComponent(escape(atob(sh.querySelector("#tx").value.trim()))));
+   S=d.s;LOGS=d.l||[];migrate();closeOv();save(true);render();toast("导入成功");}
+  catch(e){toast("这串东西读不出来");}};
+}
+function migrate(){
+ const t=newGame("无名","gu");
+ for(const k in t)if(S[k]===undefined)S[k]=t[k];
+ for(const k in ATTR){if(S.at[k]===undefined)S.at[k]=5;if(S.bonus[k]===undefined)S.bonus[k]=0;}
+}
+/* ═══════════ 离线 ═══════════ */
+function offline(ms){
+ const secTotal=ms/1000;
+ const full=Math.min(secTotal,12*3600);
+ const rest=Math.min(Math.max(0,secTotal-12*3600),60*3600)*0.4;
+ const sec=full+rest; if(sec<60)return null;
+ const before={exp:S.exp,lvl:S.lvl,silver:S.silver,bag:{...S.bag},arts:{}};
+ for(const i in S.arts)before.arts[i]=S.arts[i].lv;
+ S.offEv=0;
+ let left=sec;while(left>0){const d=Math.min(left,600);tick(S,d,true);left-=d;}
+ const lines=[];
+ const dex=S.exp-before.exp+(S.lvl>before.lvl?expNeed(before.lvl):0);
+ if(S.lvl>before.lvl)lines.push("你破了 "+(S.lvl-before.lvl)+" 重境界，如今是「"+REALM[S.lvl].n+"」。");
+ lines.push("内力修为增了约 "+fmt(Math.max(0,dex))+"。");
+ for(const i in S.arts)if(S.arts[i].lv>(before.arts[i]||0))lines.push("《"+ART[i].n+"》从 "+(before.arts[i]||0)+" 层练到了 "+S.arts[i].lv+" 层。");
+ const got=[];for(const k in S.bag){const d=S.bag[k]-(before.bag[k]||0);if(d>0&&ITEM[k])got.push(ITEM[k].n+" ×"+d);}
+ if(got.length)lines.push("捡到了："+got.join("，")+"。");
+ if(S.silver>before.silver)lines.push("袖中多了 "+fmt(S.silver-before.silver)+" 文。");
+ if(S.offEv)lines.push("路上遇着 "+S.offEv+" 桩闲事，都自己了了。");
+ return {h:Math.floor(secTotal/3600),m:Math.floor(secTotal%3600/60),lines};
+}
+function offlineDialog(o){
+ const t=o.h>=1?o.h+" 个时辰":o.m+" 刻";
+ const h='<h2>你不在的时候</h2><div class="seam gold"></div>'+
+  '<div class="story"><p class="no">过了约 '+(o.h>=24?Math.floor(o.h/24)+" 日 "+(o.h%24)+" 时辰":o.h+" 时辰 "+o.m+" 分")+'。功夫没有停。</p>'+
+  o.lines.map(l=>'<p class="no">· '+l+'</p>').join("")+'</div>'+
+  '<div class="btns"><button class="btn pri" id="ok">接着走</button></div>';
+ ov(h).querySelector("#ok").onclick=closeOv;
+}
+
+/* ═══════════ 楔子 ═══════════ */
+const PRO=[
+ "十年前，洛水断流七日。",
+ "那七日里，天下但凡内力有成者，无论正邪、无论老幼，都做了同一个梦。",
+ "梦里是一条干涸的河床。河床中央坐着一个白发女人，低头缝着什么。她缝得很慢，很稳。线是银的，针脚细密，找不出接头。",
+ "第七日夜里，洛水复流。三千零一十七名高手死在自己床上，身上没有一处伤。仵作验尸，只在他们口中，各找到一根一寸长的银线。",
+ "江湖管那七天，叫「七日梦」。管那个女人，叫「针娘」。",
+ "而你，在那七日之后醒来，忘了十年。",
+];
+function prologue(){
+ const p=$("#pro");p.style.display="flex";
+ let h='<div class="inner"><h1 class="ttl">天衣</h1><div class="tsub">无缝的江湖</div>'+
+  '<svg class="line" viewBox="0 0 190 12"><path d="M2 6 C 30 -2, 50 14, 78 6 S 130 -2, 188 6"/></svg>'+
+  '<div class="txt">';
+ PRO.forEach((t,i)=>{h+='<p'+(i===5?' class="no"':'')+' style="animation-delay:'+(2+i*0.85)+'s">'+t+'</p>';});
+ h+='</div><button class="btn pri go" id="start" style="animation-delay:'+(2+PRO.length*0.85+0.4)+'s">醒来</button></div>';
+ p.innerHTML=h;
+ p.querySelector("#start").onclick=originDialog;
+ p.onclick=e=>{if(e.target===p){p.querySelectorAll("*").forEach(x=>{x.style.animationDelay="0s";});}};
+}
+function originDialog(){
+ const p=$("#pro");
+ let h='<div class="inner"><h1 class="ttl" style="animation:none;opacity:1;font-size:min(9vw,36px)">你是谁</h1>'+
+  '<div class="tsub" style="animation:none;opacity:1">在忘掉之前</div><div style="max-width:520px;margin:0 auto">';
+ for(const k in ORIGIN){const O=ORIGIN[k];
+  h+='<button class="pick" data-k="'+k+'"><b>'+O.n+'</b><p>'+O.d+'</p>'+
+   '<p style="color:var(--thread)">'+Object.keys(O.b).map(a=>ATTR[a][0]+"+"+O.b[a]).join("　")+'　银 '+O.silver+' 文</p></button>';}
+ h+='</div></div>';
+ p.innerHTML=h;
+ p.querySelectorAll(".pick").forEach(b=>b.onclick=()=>{
+  const k=b.dataset.k;S=newGame("无名",k);
+  for(const a in ORIGIN[k].b)S.bonus[a]=(S.bonus[a]||0)+ORIGIN[k].b[a];
+  p.style.display="none";$("#app").style.display="flex";
+  LOGS=[];addLog("你在洛水渡口的一条船上醒来。","v");
+  render();save(true);showScene("c1a");});
+}
+/* ═══════════ 启动 ═══════════ */
+async function boot(){
+ hasStore=!!(window.storage&&window.storage.get);
+ await loadSlots();await loadFork();
+ const d=hasStore?await load():null;
+ if(d&&d.s&&d.s.name){
+  S=d.s;LOGS=d.l||[];migrate();
+  const gap=Date.now()-(d.t||S.t||Date.now());
+  $("#app").style.display="flex";$("#pro").style.display="none";
+  render();
+  const o=gap>60000?offline(gap):null;
+  render();
+  if(o)offlineDialog(o);
+  else if(S.scene&&SC[S.scene])showScene(S.scene);
+ } else prologue();
+ setInterval(()=>{ if(!S)return; const r0=S.lvl; tick(S,1,false);
+   if(S.lvl!==r0&&!$("#ov").innerHTML)renderMain(); renderChar();
+   $("#clock").textContent="江湖第 "+(S.days+1)+" 日"; $("#silver").innerHTML="银两 <b>"+fmt(S.silver)+"</b>"; },1000);
+ setInterval(()=>{if(S)save();},20000);
+ setInterval(()=>{if(S&&savePending)save(true);},30000);
+ document.addEventListener("visibilitychange",()=>{if(document.hidden&&S)save(true);});
+ window.addEventListener("beforeunload",()=>{if(S)save(true);});
+ const mc=$("#mchar");if(mc)mc.onclick=()=>$("#char").classList.toggle("show");
+ if(S&&S.au){AU.on=S.au.on!==false;AU.vb=S.au.vb!=null?S.au.vb:AU.vb;AU.vs=S.au.vs!=null?S.au.vs:AU.vs;}
+ document.addEventListener("click",e=>{
+  const first=!AU.ctx;
+  auResume();
+  if(first&&S&&AU.on)bgm(bgmFor(S.loc));
+  if(e.target.closest(".btn,.tab,.opt,.mapg .on,.pad button"))sfx("tap");
+ },true);
+}
+boot();
+</script>
+</body>
+</html>
