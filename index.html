@@ -1713,8 +1713,6 @@ const DIRN={n:"北",s:"南",e:"东",w:"西"};
 function dirOf(a,b){const A=LOC[a],B=LOC[b];
  const dx=B.mx-A.mx,dy=B.my-A.my;
  return Math.abs(dx)>Math.abs(dy)?(dx>0?"e":"w"):(dy>0?"s":"n");}
-function nbr(d){const L=LOC[S.loc];
- return (L.to||[]).find(t=>LOC[t]&&locOpen(t)&&dirOf(S.loc,t)===d);}
 /* 一处一桩，搜出来才算数 */
 const FIND={
  dukou:{t:"船底的夹层",tx:"你把渡船翻过来看。船底钉着一块补板，补板底下塞着一卷油布。油布里是一张名单，三十几个名字，每个名字上都打了叉。最后一个没打。",
@@ -1837,7 +1835,6 @@ function askAround(){
    走着的时候练的是身法——脚底下的功夫，本来就是走出来的。   */
 function locOpen(k){return S.locs.includes(k);}
 function heardOf(k){return !!((S.heard||{})[k]);}
-function locVisible(k){return locOpen(k)||heardOf(k);}
 function pathTo(from,to){
  if(from===to)return [];
  if(!locOpen(to))return null;
@@ -1850,7 +1847,6 @@ function pathTo(from,to){
    q.push(t);}}
  return null;
 }
-function stepsTo(k){const p=pathTo(S.loc,k);return p?p.length:-1;}
 function roadDist(k){const p=pathTo(S.loc,k);if(!p)return -1;
  let d=0,c=S.loc;for(const t of p){d+=roadLen(c,t);c=t;}return d;}
 /* 脚程：身法、捷、路面、缓急，都算在里头 */
