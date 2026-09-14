@@ -1495,7 +1495,10 @@ function visitNpc(k){
 function aff(s,id,n){s.aff[id]=cl((s.aff[id]||0)+n,0,100);if(n>0)addLog("与 <b>"+NPC[id].n+"</b> 的交情加深了。","g");}
 function item(s,id,n){if(!id||!ITEM[id])return;s.bag[id]=(s.bag[id]||0)+(n||1);addLog("得到 "+ITEM[id].n+" ×"+(n||1),"g");}
 function takeItem(s,id,n){if((s.bag[id]||0)<n)return false;s.bag[id]-=n;if(s.bag[id]<=0)delete s.bag[id];return true;}
-function gearGain(s,id){if(!GEAR[id])return;if(!s.own.includes(id))s.own.push(id);addLog("得到 <b>"+GEAR[id].n+"</b>","y");}
+function gearGain(s,id){if(!GEAR[id])return;if(!s.own.includes(id))s.own.push(id);
+ addLog("得到 <b>"+GEAR[id].n+"</b>","y");
+ const sl=GEAR[id].s;                       // 空着的位置就直接使上，省得东西躺在箱底
+ if(sl&&!s.gear[sl]){s.gear[sl]=id;addLog("你把它"+(sl==="weapon"?"握在手里":"带上了")+"。","");}}
 function unlock(s,id){if(!s.locs.includes(id)){s.locs.push(id);addLog("可去 <b>"+LOC[id].n+"</b> 了。","y");}}
 function learn(s,id){if(s.arts[id])return;s.arts[id]={lv:0,exp:0};
  addLog("习得武学 <b>"+ART[id].n+"</b>","y");
@@ -1658,7 +1661,7 @@ function encPool(){
  return ENC.filter(e=>e.tr<=lv+0.4&&e.tr>=lv-2.6&&(!e.where||e.where.includes(S.loc)));
 }
 function rollEnc(){
- if(sceneQ||S.end)return false;
+ if(sceneQ||BT||S.end)return false;
  let pool=encPool();if(!pool.length)return false;
  S.recent=S.recent||[];
  const fresh=pool.filter(e=>!S.recent.includes(e.id));
@@ -1668,30 +1671,37 @@ function rollEnc(){
  S.recent=(S.recent||[]).concat(e.id).slice(-3);
  S.evs++;showEvent(e);return true;
 }
+const TODAMB={
+ dawn:["天刚亮，雾还压在地上，走一步散一步。","远处有人在喊，喊的是什么听不清。"],
+ noon:["日头正当中。影子缩成脚底下一小团。","热得发闷。连声音都懒。"],
+ dusk:["天色一寸一寸暗下去。有人开始收摊。","最后一点光挂在墙头上，红得不像话。"],
+ night:["灯火隔着远，看着比实际的近。","夜里听得见的东西，白天都在，只是听不见。"],
+ deep:["这个时候还醒着的，都不是寻常人。","静得能听见自己心跳。你数了几下，就不敢再数了。"],
+};
 function ambient(){
- const a=AMBIENT[S.loc];if(!a)return;
- addLog(pick(a),"m");
+ const a=AMBIENT[S.loc];
+ if(a&&rnd(1)<.72){addLog(pick(a),"m");return;}
+ const sp=curSpot();
+ if(sp.d&&rnd(1)<.35){addLog(sp.d,"m");return;}
+ addLog(pick(TODAMB[todKey()]),"m");
 }
 /* 主动去招惹 */
 function probe(){
  if(sceneQ)return;
  S.probe=S.probe||{};
- const r=rnd(1);
- if(r<.40){ if(!rollEnc()){ if(!rollEvent2())ambient(); } }
+ const sp=curSpot(),wild=sp.wild?1:0;
+ const r=rnd(1)*(wild?.9:1.12);
+ if(r<(wild?.52:.28)){ if(!rollEnc()){ if(!rollEvent2())ambient(); } }
  else if(r<.72){ rollEvent2(); }
  else if(r<.88){ ambient(); }
  else { addLog(pick(["你在这一带转了一圈，什么也没碰上。","转了半晌，只惊起几只鸟。",
    "没什么事。有时候没事就是好事。","你站了一会儿，听了听，走回来了。"]),"m"); }
  save();render();
 }
-function rollEvent2(){ if(sceneQ)return false; rollEvent(S); return true; }
+function rollEvent2(){ if(sceneQ||BT)return false; rollEvent(S); return true; }
 /* 到一个地方，多半什么也不发生。夜里例外。 */
 function arrive(first){
  if(sceneQ||S.end)return;
- if(first){
-  addLog("<b>"+LOC[S.loc].n+"</b>　"+LOC[S.loc].d,"y");
-  weave(S,1);gainExp(S,200+S.lvl*120);
- }
  const r=rnd(1), night=todKey()==="night"||todKey()==="deep";
  if(r<(first?.34:.50))return;
  if(r<.74){ambient();return;}
@@ -1902,7 +1912,7 @@ function setPace(p){S.pace=p;save();renderMain();}
 /* 每一息推一点。挡在前头的窗子（奇遇、交手）没关，脚就停着 */
 function tripTick(dt){
  const T=S.trip;if(!T)return;
- if(BT||$("#ov").innerHTML||sceneQ)return;
+ if(BT||sceneQ)return;      // 打岔的是奇遇与交手，翻翻行囊不算
  const L=T.leg,sp=tripSpeed()*roadOf(L.from,L.to).sp;
  const was=L.prog;L.prog+=sp*dt;
  artExp(S,S.eq.shen,rates(S).step*dt*0.75);
@@ -1944,8 +1954,10 @@ function enterLoc(k,first,quiet){
  S.loc=k;S.been=S.been||{};
  S.spot=spots(k)[0].id;
  if(!locOpen(k))unlock(S,k);
- if(!S.been[k])S.been[k]=1;
- addLog("你到了 <b>"+LOC[k].n+"</b>。","");
+ if(!S.been[k]){S.been[k]=1;
+  addLog("你到了 <b>"+LOC[k].n+"</b>。"+LOC[k].d,"y");
+  weave(S,1);gainExp(S,200+S.lvl*120);
+ } else addLog("你到了 <b>"+LOC[k].n+"</b>。","");
  sfx(k==="dukou"?"water":"step");
  bgm(bgmFor(k));
  if(!quiet){save();render();arrive(first);checkStory();}
@@ -1994,7 +2006,7 @@ function goSpot(id){
  save();render();checkStory();
 }
 function rollEvent(s){
- if(sceneQ)return;
+ if(sceneQ||BT)return;
  const pool=EV.filter(e=>(!e.need||e.need(s))&&(!e.loc||e.loc.includes(s.loc)));
  const wt=e=>e.loc?e.w*3:e.w;
  const tot=pool.reduce((t,e)=>t+wt(e),0);let r=rnd(tot),e=pool[0];
@@ -2158,7 +2170,8 @@ function battleIntro(sc){
  const sh=ov(h);
  sh.querySelector("#wait").onclick=()=>{S.hold=Date.now();S.holdMs=90000;
   closeOv();save();render();addLog("你退开了。等你想好了，在「纪事」里接着走。","");};
- sh.querySelector("#go").onclick=()=>fight(S,sc.b.foe,null,null,sc.b);
+ sh.querySelector("#go").onclick=()=>{const id=S.scene;closeOv();S.scene=id;
+  fight(S,sc.b.foe,null,null,sc.b);};
 }
 function nameDialog(){
  const h='<h2>起名</h2><div class="seam gold"></div><div class="story"><p>「没名字的人在江湖上活不长，」渡老说，「人家连怎么恨你都不知道。」</p></div>'+
@@ -2209,8 +2222,9 @@ function showBattle(){
   '<div id="blog"></div><div class="seam"></div>'+
   '<div class="btns"><button class="btn" id="skip">直接看结果</button><button class="btn pri" id="done" style="display:none">收</button></div>';
  // 战斗不再弹窗：见闻那一栏直接变成战场
- const st=$("#battle"),lgp=$("#log");
+ const st=$("#battle"),lgp=$("#log"),hr=$("#here");
  st.innerHTML=h;st.style.display="";if(lgp)lgp.style.display="none";
+ if(hr)hr.style.display="none";
  const sh=st,lg=sh.querySelector("#blog");
  bgm("fight");sfx("gong");
  const setHp=(side,hp,mhp)=>{
@@ -2234,10 +2248,12 @@ function showBattle(){
   clearTimeout(b.tm);const win=b.A.hp>0;
   sfx(win?"win":"lose");bgm(bgmFor(S.loc));
   st.innerHTML="";st.style.display="none";if(lgp)lgp.style.display="";
+  if(hr)hr.style.display="";
   const sw=b.sceneWin,sl=b.sceneLose,ow=b.onWin,ol=b.onLose;BT=null;
   if(win){ if(ow)ow(); if(sw){showScene(sw);save();return;} }
   else { if(ol)ol(); if(sl){showScene(sl);save();return;}
-    if(sw){addLog("你输了。养好伤再来。","r");} }
+    if(sw){addLog("你输了。这一场没了结——养好伤，练一练，再回这个地方来。","r");
+      toast("此战可在「纪事」里接着走");S.hold=Date.now();S.holdMs=300000;} }
   save();render();};
 }
 /* ── 结局 ── */
