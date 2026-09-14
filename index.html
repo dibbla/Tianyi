@@ -258,6 +258,60 @@ input,textarea{font-family:inherit;font-size:inherit}
 .wrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .tagl{font-size:11px;letter-spacing:.18em;color:var(--weft);margin-top:9px}
 #battle .vs{margin-bottom:8px}
+
+/* ══════ 此地 ══════ */
+.lochd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.locn{font-family:var(--kai);font-size:24px;color:var(--thread);letter-spacing:.06em;margin:0}
+.loct{font-size:12px;letter-spacing:.14em;color:var(--silk3)}
+.locd{color:var(--silk);opacity:.78;line-height:1.8;margin:5px 0 2px;font-size:13.5px}
+.chip i{font-style:normal;font-size:11px;color:var(--silk3);letter-spacing:.02em}
+.chip u{text-decoration:none;font-size:11px;color:var(--jade)}
+.chip.gho{border-style:dashed;color:var(--silk3)}
+.chip.gho:hover{color:var(--thread);border-color:var(--thread)}
+.rowq{display:flex;gap:10px;font-size:12.5px;padding:3px 0;color:var(--silk3);border-bottom:1px dotted #232b39}
+.rowq span{flex:0 0 3.2em;letter-spacing:.14em}
+.rowq b{font-weight:400;color:var(--silk2)}
+.rowq.ok b{color:var(--jade)}
+.rowq:not(.ok) b{color:var(--thread)}
+.card .btns small{color:var(--silk3);font-size:11.5px}
+
+/* ══════ 舆图：一块布，路是针脚 ══════ */
+#world{flex:0 0 auto;padding:2px 0;border-top:1px solid var(--weft);margin-top:10px}
+.cmap{display:block;width:100%;height:clamp(196px,31vh,330px)}
+.mapbox{border:1px solid var(--weft);background:#11151d;padding:6px 4px;margin-top:8px}
+.cmap.big{height:auto;aspect-ratio:214/126;max-height:56vh}
+.cmap .river{fill:none;stroke:#2b3b4c;stroke-width:2.4;stroke-linecap:round;opacity:.7}
+.cmap .river.dry{stroke:#2b3038;stroke-width:1.6;stroke-dasharray:3 4;opacity:.55}
+.cmap .rg{fill:var(--weft2);font-size:5.6px;letter-spacing:.3em;opacity:.3;
+  font-family:var(--kai);text-anchor:middle;pointer-events:none}
+.cmap .rd{stroke:var(--weft2);stroke-width:.85;stroke-dasharray:3 2.4;opacity:.9}
+.cmap .rd.un{stroke:var(--weft);stroke-width:.7;stroke-dasharray:.9 3;opacity:.55}
+.cmap .clueln{stroke:var(--cinnabar);stroke-width:.75;stroke-dasharray:2 3.4;opacity:.8;
+  animation:crawl 7s linear infinite;pointer-events:none}
+@keyframes crawl{to{stroke-dashoffset:-54}}
+.cmap .walkln{stroke:var(--thread);stroke-width:.8;stroke-dasharray:1.4 2;opacity:.55;pointer-events:none}
+.cmap .trav{fill:var(--thread2);pointer-events:none}
+.cmap .mn{cursor:pointer}
+.cmap .hit{fill:transparent}
+.cmap .knot{fill:var(--silk2);stroke:var(--cloth);stroke-width:.5;transition:fill .2s}
+.cmap .nm{fill:var(--silk2);font-size:5.2px;text-anchor:middle;font-family:var(--kai);
+  letter-spacing:.05em;pointer-events:none}
+.cmap .mk{fill:var(--thread);font-size:3.6px;pointer-events:none}
+.cmap .ring{fill:none;stroke:var(--thread);stroke-width:.7;opacity:.85}
+.cmap .mn.on:hover .knot,.cmap .mn.cur .knot{fill:var(--thread2)}
+.cmap .mn.on:hover .nm,.cmap .mn.cur .nm{fill:var(--thread2)}
+.cmap .mn.ghost .knot,.cmap .mn.heard .knot{fill:none;stroke:var(--weft2);stroke-width:.6;stroke-dasharray:1 1}
+.cmap .mn.ghost .nm,.cmap .mn.heard .nm{fill:var(--weft2);font-size:4.8px}
+.cmap .mn.ghost:hover .knot,.cmap .mn.heard:hover .knot{stroke:var(--thread)}
+.cmap .mn.tgt .knot{fill:var(--cinnabar);stroke:var(--cinnabar)}
+.cmap .mn.tgt .nm{fill:#c4675c}
+body[data-tod="night"] .cmap .nm,body[data-tod="deep"] .cmap .nm{opacity:.82}
+body[data-tod="night"] .cmap .river,body[data-tod="deep"] .cmap .river{opacity:.5}
+body[data-tod="dusk"] .cmap .rg{fill:#5a4a44}
+@media (max-width:780px){
+  .cmap{height:clamp(168px,26vh,240px)}
+  .locn{font-size:21px}
+}
 </style>
 </head>
 <body>
@@ -275,8 +329,12 @@ input,textarea{font-family:inherit;font-size:inherit}
   <div class="grid">
     <aside class="col" id="char"></aside>
     <main class="col" id="main">
-      <div id="stage"><div id="battle" style="display:none"></div><div id="log"></div></div>
-      <div class="seam"></div>
+      <div id="stage">
+        <div id="battle" style="display:none"></div>
+        <div id="here"></div>
+        <div class="seam"></div>
+        <div id="log"></div>
+      </div>
       <div id="world"></div>
       <div id="drawer"></div>
     </main>
@@ -630,35 +688,146 @@ const GEAR={
 };
 const SLOT={weapon:"兵器",armor:"衣甲",boots:"鞋履",charm:"随身"};
 
-/* ───────── 地点 ───────── */
+/* ───────── 地点 ─────────
+   舆图上的一处大地方。mx/my 是它在图上的位置（上北下南），
+   每处底下还分几个「去处」，见 SPOT。                       */
 const LOC={
- dukou:{n:"洛水渡口",x:0,y:0,d:"一条渡船，一个老船夫，十年没换过。水面上永远浮着一层看不清的东西。",ch:0,
-   acts:["herb","mine"],lv:0,to:["qingpu","duanhe"],npc:["dulao"]},
- qingpu:{n:"青蒲镇",x:0,y:-1,d:"两条街，一口井，一个卖馄饨的。镇上人不问外乡人的来路。",ch:1,acts:["herb"],shop:1,lv:0.8,
-   to:["dukou","panshan","yunxiu"],npc:["pei"]},
- duanhe:{n:"断河集",x:0,y:1,d:"洛水断流那七日之后长出来的集市。买卖的东西一半见不得光。",ch:1,acts:["herb","mine"],shop:1,lv:1.6,
-   to:["dukou","kuhe","tiezhen","jianzhong"],npc:[]},
- panshan:{n:"磐钟山道",x:0,y:-2,d:"三千级石阶，每一级上都刻着一个字，连起来没人读得通。",ch:2,acts:["mine"],lv:2.6,
-   to:["qingpu","zhongfu"],npc:["hanshan"]},
- yunxiu:{n:"云绣坊",x:-1,y:-1,d:"整条巷子都在响，是织机。夜里也响。",ch:2,acts:["silk"],shop:1,lv:2.6,
-   to:["qingpu"],npc:["heng"]},
- kuhe:{n:"枯河谷",x:0,y:2,d:"河床干了十年，裂口深得能站进去一个人。",ch:3,acts:["mine","herb"],lv:3.8,
-   to:["duanhe","zhishi","wuying"],npc:[]},
- tiezhen:{n:"铁砧堡",x:1,y:1,d:"堡墙是拿废兵器垒的。走近了能闻见铁锈和汗。",ch:3,acts:["mine"],shop:1,lv:3.8,
-   to:["duanhe"],npc:["zhuo"]},
- jianzhong:{n:"剑冢野",x:-1,y:1,d:"几万柄断剑插在地里，像一片没长叶的林子。",ch:3,acts:["mine"],lv:4.8,
-   to:["duanhe","jianshen"],npc:[]},
- wuying:{n:"无影林",x:0,y:3,d:"林子里没有影子。不是因为没有光。",ch:5,acts:["herb"],lv:6.2,
-   to:["kuhe","lie"],npc:["xie"]},
- zhishi:{n:"织室",x:1,y:2,d:"在枯河底下。一间屋子，四壁是活的。",ch:6,acts:["silk"],lv:7.4,
-   to:["kuhe"],npc:["sang"]},
- lie:{n:"裂",x:0,y:4,d:"你找不到词形容它。它也不需要词。",ch:8,acts:[],lv:8.6,
-   to:["wuying"],npc:[]},
- zhongfu:{n:"钟腹",x:0,y:-3,d:"钟是空的，里面站得下人。壁上刻满了字，是从里面刻的。",ch:2,acts:["mine"],lv:3.4,
-   to:["panshan"],npc:[],hidden:1},
- jianshen:{n:"剑冢深处",x:-2,y:1,d:"断剑在这里不是插着的，是堆着的。堆成一个人形，很高。",ch:3,acts:["mine"],lv:5.4,
-   to:["jianzhong"],npc:[],hidden:1},
+ dukou:{n:"洛水渡口",mx:88,my:62,x:0,y:0,reg:"洛水",
+   d:"一条渡船，一个老船夫，十年没换过。水面上永远浮着一层看不清的东西。",
+   lv:0,to:["qingpu","duanhe"]},
+ qingpu:{n:"青蒲镇",mx:62,my:48,x:0,y:-1,reg:"洛水",shop:1,
+   d:"两条街，一口井，一个卖馄饨的。镇上人不问外乡人的来路。",
+   lv:0.8,to:["dukou","panshan","yunxiu"]},
+ duanhe:{n:"断河集",mx:118,my:58,x:0,y:1,reg:"洛水",shop:1,
+   d:"洛水断流那七日之后长出来的集市。买卖的东西一半见不得光。",
+   lv:1.6,to:["dukou","kuhe","tiezhen","jianzhong"]},
+ panshan:{n:"磐钟山道",mx:52,my:26,x:0,y:-2,reg:"磐钟山",
+   d:"三千级石阶，每一级上都刻着一个字，连起来没人读得通。",
+   lv:2.6,to:["qingpu","zhongfu"]},
+ yunxiu:{n:"云绣坊",mx:14,my:50,x:-1,y:-1,reg:"缀云",shop:1,
+   d:"整条巷子都在响，是织机。夜里也响。",
+   lv:2.6,to:["qingpu"]},
+ kuhe:{n:"枯河谷",mx:144,my:80,x:0,y:2,reg:"枯河",
+   d:"河床干了十年，裂口深得能站进去一个人。",
+   lv:3.8,to:["duanhe","zhishi","wuying"]},
+ tiezhen:{n:"铁砧堡",mx:172,my:44,x:1,y:1,reg:"东原",shop:1,
+   d:"堡墙是拿废兵器垒的。走近了能闻见铁锈和汗。",
+   lv:3.8,to:["duanhe"]},
+ jianzhong:{n:"剑冢野",mx:104,my:88,x:-1,y:1,reg:"剑冢",
+   d:"几万柄断剑插在地里，像一片没长叶的林子。",
+   lv:4.8,to:["duanhe","jianshen"]},
+ wuying:{n:"无影林",mx:122,my:100,x:0,y:3,reg:"无影",
+   d:"林子里没有影子。不是因为没有光。",
+   lv:6.2,to:["kuhe","lie"]},
+ zhishi:{n:"织室",mx:178,my:98,x:1,y:2,reg:"枯河",
+   d:"在枯河底下。一间屋子，四壁是活的。",
+   lv:7.4,to:["kuhe"]},
+ lie:{n:"裂",mx:104,my:112,x:0,y:4,reg:"无影",
+   d:"你找不到词形容它。它也不需要词。",
+   lv:8.6,to:["wuying"]},
+ zhongfu:{n:"钟腹",mx:44,my:10,x:0,y:-3,reg:"磐钟山",
+   d:"钟是空的，里面站得下人。壁上刻满了字，是从里面刻的。",
+   lv:3.4,to:["panshan"],hidden:1},
+ jianshen:{n:"剑冢深处",mx:62,my:96,x:-2,y:1,reg:"剑冢",
+   d:"断剑在这里不是插着的，是堆着的。堆成一个人形，很高。",
+   lv:5.4,to:["jianzhong"],hidden:1},
 };
+/* 路：不同的路走起来不一样。key 是两头地名排序后拼起来的。 */
+const RK={guan:{n:"官道",sp:1.15,enc:.8},shan:{n:"山道",sp:.72,enc:1},
+ ye:{n:"野径",sp:.82,enc:1.45},shui:{n:"水路",sp:1,enc:.6},di:{n:"地缝",sp:.6,enc:1.2}};
+const ROAD={
+ "dukou|qingpu":"guan","dukou|duanhe":"shui","duanhe|tiezhen":"guan",
+ "panshan|qingpu":"shan","qingpu|yunxiu":"guan","duanhe|kuhe":"ye",
+ "jianzhong|kuhe":"ye","duanhe|jianzhong":"ye","kuhe|zhishi":"di",
+ "kuhe|wuying":"ye","lie|wuying":"ye","panshan|zhongfu":"di","jianshen|jianzhong":"ye",
+};
+function roadKey(a,b){return [a,b].sort().join("|");}
+function roadOf(a,b){return RK[ROAD[roadKey(a,b)]||"ye"];}
+function roadLen(a,b){const A=LOC[a],B=LOC[b];
+ return Math.max(1,Math.round(Math.hypot(A.mx-B.mx,A.my-B.my)/6));}
+/* ───────── 去处：一处地方底下的几个小场景 ─────────
+   活计得在对的去处才做得成：药在坡上，铁在砂里，丝在机房。
+   人也各有各站的地方，还各有各的时辰。                      */
+const SPOT={
+ dukou:[
+  {id:"chuan",n:"船头",d:"渡老的船。船板磨得发亮，中间凹下去一块，是一双脚站了四十年的形状。",find:"dukou"},
+  {id:"weitan",n:"苇滩",d:"芦苇比人高。风一过，整片滩都在给什么东西让路。",acts:["herb"],wild:1},
+  {id:"shipo",n:"碎石坡",d:"渡口背后的坡，砂里有铁，是上游冲下来的。",acts:["mine"]},
+ ],
+ qingpu:[
+  {id:"jie",n:"镇上两条街",d:"铺面挨着铺面。你走过去，说话声就低一截，等你走远又接上。",ask:1,shop:1},
+  {id:"huntun",n:"馄饨摊",d:"热气糊住了半条街。摊主不问来路，只问要几两。",ask:1},
+  {id:"jingtai",n:"井台",d:"镇上唯一的井。绳子磨得起了毛，井口的石头凹了一圈。",find:"qingpu"},
+  {id:"zhenxi",n:"镇西",d:"镇西住的都是外来的。院门大多关着，白天也关。"},
+  {id:"yaopo",n:"镇外药坡",d:"坡上什么都长一点，什么都长不旺。",acts:["herb"],wild:1},
+ ],
+ duanhe:[
+  {id:"shi",n:"集上",d:"叫卖声压得很低，像怕惊着什么。买卖的东西一半见不得光。",ask:1,shop:1},
+  {id:"jiusi",n:"酒肆",d:"白天没人，掌灯之后才满。喝到后半夜的多半不是为了酒。",ask:1},
+  {id:"hetan",n:"断河滩",d:"河断在这里。滩上是一层白的，不知道是盐还是别的。",acts:["herb","mine"],wild:1},
+  {id:"nashe",n:"没人管的摊子",d:"角落有个摊子，摊主不见了，东西还摆着。",find:"duanhe"},
+ ],
+ panshan:[
+  {id:"shijie",n:"三千石阶",d:"每一级上刻着一个字。你走一级看一个，看到第两百级就不敢再看了。",wild:1},
+  {id:"zhonglou",n:"钟楼",d:"小钟一天敲一百零八下。大钟从来不敲。",find:"panshan"},
+  {id:"caipo",n:"采石场",d:"寺里修殿用的石头从这里出。现在没人采了，工具还在。",acts:["mine"]},
+ ],
+ yunxiu:[
+  {id:"jifang",n:"机房",d:"三十台织机同时在响。说话得凑到耳朵边上。",acts:["silk"]},
+  {id:"ranfang",n:"染坊",d:"院子里挂满了布，风一吹全是颜色在动。",acts:["silk"],ask:1,shop:1},
+  {id:"suofang",n:"锁着的那间",d:"最里头一间常年上锁。门闩是朽的。",find:"yunxiu"},
+ ],
+ kuhe:[
+  {id:"hedao",n:"干河道",d:"走在河底下。两边的岸比人高，抬头是一条细长的天。",acts:["herb","mine"],wild:1},
+  {id:"liekou",n:"裂口",d:"河床上的裂口在出气，一阵一阵，像呼吸。",find:"kuhe"},
+  {id:"xiaxing",n:"下行处",d:"有一道裂缝斜着往下，宽得容得下一个人侧身进去。底下的光是另一种颜色。"},
+ ],
+ tiezhen:[
+  {id:"lu",n:"炉前",d:"炉火的红光把人的脸都照成一个样子。",shop:1},
+  {id:"qiangxia",n:"堡墙下",d:"墙是拿废兵器垒的。走近了能闻见铁锈和汗。",acts:["mine"],find:"tiezhen"},
+  {id:"jiaochang",n:"校场",d:"堡里的人在这儿喂招。输了的自己去墙根坐着。",wild:1,ask:1},
+ ],
+ jianzhong:[
+  {id:"jianlin",n:"剑林",d:"几万柄断剑插在地里。风过的时候整片地在响。",acts:["mine"],wild:1},
+  {id:"daocha",n:"倒插的那一列",d:"有一列剑是倒着插的，剑柄朝下，连成一条线，一直往西。",find:"jianzhong"},
+ ],
+ wuying:[
+  {id:"linbian",n:"林边",d:"站在这里往里看，什么都看得清，就是没有影子。"},
+  {id:"linzhong",n:"林中",d:"树冠密得看不见天，地上却是亮的。",acts:["herb"],wild:1,find:"wuying"},
+  {id:"kouzi",n:"口子边上",d:"林子中央有一处，布像被人从两边拉开了。中间露出底下的东西。"},
+ ],
+ zhishi:[
+  {id:"menkou",n:"门口",d:"门后是一间屋子，方的，不大。四壁挂满了布，那些布在动。"},
+  {id:"sibi",n:"四壁",d:"每一块布上都有针脚，密密麻麻。有的整齐得吓人，有的一看就是新手活。",find:"zhishi"},
+  {id:"yizi",n:"空椅子",d:"椅子边上放着一个笸箩。笸箩里堆满了银线，每一根都是一寸整。"},
+ ],
+ lie:[
+  {id:"qian",n:"裂前",d:"它不宽，不高，不发光也不发暗。它只是一处地方，那里的世界还没有被织过。"},
+ ],
+ zhongfu:[
+  {id:"nei",n:"钟腹内",d:"很黑。你的呼吸撞在壁上弹回来。",find:"zhongfu"},
+  {id:"bixia",n:"壁下",d:"钟壁底下积着一层铜屑，是几千遍刻字刻下来的。",acts:["mine"]},
+ ],
+ jianshen:[
+  {id:"renxing",n:"人形那一堆",d:"断剑堆成一个人形，比你高出两个头。它不是堆出来的——是长出来的。",find:"jianshen"},
+  {id:"duijian",n:"剑堆",d:"剑在这里不是插着的，是堆着的。踩上去会陷。",acts:["mine"],wild:1},
+ ],
+};
+function spots(k){return SPOT[k]||[{id:"here",n:LOC[k].n,d:LOC[k].d}];}
+function spotOf(k,id){const a=spots(k);return a.find(x=>x.id===id)||a[0];}
+function curSpot(){return spotOf(S.loc,S.spot);}
+/* ───────── 时辰：一日分五时 ─────────
+   一日一千二百息。天色管着：谁在不在，夜路好不好走，
+   有些事只在某个时辰才撞得见。                            */
+const TOD=[{k:"dawn",n:"拂晓",tint:"#1a2130",enc:.8},
+ {k:"noon",n:"晌午",tint:"#1c2230",enc:.85},
+ {k:"dusk",n:"黄昏",tint:"#221d24",enc:1},
+ {k:"night",n:"入夜",tint:"#11151e",enc:1.35},
+ {k:"deep",n:"子时",tint:"#0d1118",enc:1.6}];
+function todIdx(s){return Math.floor(((((s||S)||{}).playSec||0)%1200)/240);}
+function todKey(s){return TOD[todIdx(s)].k;}
+function todName(s){return TOD[todIdx(s)].n;}
+function todIn(list,s){return !list||!list.length||list.includes(todKey(s));}
 const ACT={
  sit:{n:"打坐",d:"行气周天，长内功修为。",tip:"内功"},
  form:{n:"练招",d:"一招一式喂到肌肉里去。",tip:"招式"},
@@ -668,15 +837,24 @@ const ACT={
  silk:{n:"缫丝",d:"坐在织机边上，手比脑子先学会。",tip:"织料"},
  walk:{n:"游历",d:"漫无目的地走。江湖会自己找上来。",tip:"奇遇"},
 };
-/* ───────── 人物 ───────── */
+/* ───────── 人物 ─────────
+   人不是挂在地名下的一个钮。他站在某一处去处，
+   且只在某几个时辰站在那里。你得走到跟前，还得赶上。   */
 const NPC={
- dulao:{n:"渡老",t:"洛水渡口的船夫",d:"撑了四十年船。他说他记得所有上过他船的人，除了你。"},
- pei:{n:"裴无咎",t:"前捕头，现酒鬼",d:"七日梦那年他在验尸房里待了七天，出来之后就再没穿过官服。"},
- heng:{n:"阿蘅",t:"缀云楼绣娘",d:"十七岁，手上有三十九个针孔。她说第四十个留给该留的人。"},
- hanshan:{n:"释寒山",t:"磐钟寺敲钟人",d:"不是和尚，寺里也不让他受戒。他只负责敲钟，一天一百零八下。"},
- zhuo:{n:"卓不弃",t:"铁砧堂铸匠",d:"左手只剩三根指头。他说剩下两根换了一把好刀，划算。"},
- xie:{n:"谢无影",t:"？",d:"你见过他三次。三次他站的地方，都没有影子。"},
- sang:{n:"桑照",t:"针娘",d:"白发。你在梦里见过她，比现实里年轻四十岁。"},
+ dulao:{n:"渡老",t:"洛水渡口的船夫",loc:"dukou",spot:"chuan",
+   d:"撑了四十年船。他说他记得所有上过他船的人，除了你。"},
+ pei:{n:"裴无咎",t:"前捕头，现酒鬼",loc:"qingpu",spot:"huntun",tod:["dusk","night","deep"],
+   d:"七日梦那年他在验尸房里待了七天，出来之后就再没穿过官服。"},
+ heng:{n:"阿蘅",t:"缀云楼绣娘",loc:"yunxiu",spot:"jifang",tod:["dawn","noon","dusk","night"],
+   d:"十七岁，手上有三十九个针孔。她说第四十个留给该留的人。"},
+ hanshan:{n:"释寒山",t:"磐钟寺敲钟人",loc:"panshan",spot:"zhonglou",tod:["dawn","noon","dusk"],
+   d:"不是和尚，寺里也不让他受戒。他只负责敲钟，一天一百零八下。"},
+ zhuo:{n:"卓不弃",t:"铁砧堂铸匠",loc:"tiezhen",spot:"lu",tod:["dawn","noon","dusk","night"],
+   d:"左手只剩三根指头。他说剩下两根换了一把好刀，划算。"},
+ xie:{n:"谢无影",t:"？",loc:"wuying",spot:"linbian",need:s=>s.ch>=5&&!s.flags.xie_dead,
+   d:"你见过他三次。三次他站的地方，都没有影子。"},
+ sang:{n:"桑照",t:"针娘",loc:"zhishi",spot:"yizi",need:s=>s.ch>=7,
+   d:"白发。你在梦里见过她，比现实里年轻四十岁。"},
 };
 /* ───────── 敌人 ───────── */
 const FOE={
@@ -805,19 +983,116 @@ const EV=[
      {t:"作揖告辞",f:s=>{addLog("老人点点头：「懂事。」他给了你一张残页。","g");item(s,"canye",2);}}]},
 ];
 
-/* ═══════════ 主线 ═══════════ */
+/* ═══════════ 主线 ═══════════
+   没有「往下走」这个钮。故事不等着你点它——
+   它在某一处地方、某一个时辰、你到了某个火候的时候，自己撞上来。
+   你手里只有一条线索：一句话，一个地名，一个时候。剩下的靠腿。   */
 const CHAP=[
- {n:"第一章 · 渡口无名",at:"c1a",r:0,d:"你在一条船上醒来，不记得自己是谁。"},
- {n:"第二章 · 择一条路走",at:"c2a",r:1,d:"江湖不收没有出身的人。"},
- {n:"第三章 · 断线的人",at:"c3a",r:2,d:"死人身上没有伤，嘴里有线。"},
- {n:"第四章 · 旧梦重织",at:"c4a",r:3,d:"她在梦里说：你这一线，还在外面。"},
- {n:"第五章 · 河底下的屋子",at:"c5a",r:4,d:"洛水断流的那七日，底下露出过什么。"},
- {n:"第六章 · 三千人的债",at:"c6a",r:5,d:"不是杀。是取线。"},
- {n:"第七章 · 无影者",at:"c7a",r:6,d:"从裂里出来的东西，学得很快。"},
- {n:"第八章 · 针娘",at:"c8a",r:7,d:"最后一任司针，快缝不动了。"},
- {n:"第九章 · 一线之外",at:"c9a",r:8,d:"你为什么杀不死。"},
- {n:"终章 · 天衣",at:"c10a",r:8,d:"缝、断、织。你只能选一个。"},
+ {n:"第一章 · 渡口无名",at:"c1a",r:0,d:"你在一条船上醒来，不记得自己是谁。",
+  g:{loc:"dukou"},
+  clue:{t:"你是谁",tx:"你在洛水渡口的一条船上醒来，不记得十年。撑船的老人说你得先有个名字。"}},
+
+ {n:"第二章 · 择一条路走",at:"c2a",r:1,d:"江湖不收没有出身的人。",
+  g:{loc:"duanhe",spot:"shi"},
+  clue:{t:"一个来历",tx:"镇上人问你是哪一路的，你答不上来。答不上来的人买不到药，住不进店。渡老说，断河集上什么都买得到，连一个来历也是——那地方三教九流都在集上坐着。"}},
+
+ {n:"第三章 · 断线的人",at:"c3a",r:2,d:"死人身上没有伤，嘴里有线。",
+  g:{loc:"duanhe",spot:"jiusi",tod:["dusk","night","deep"]},
+  clue:{t:"十一个死人",tx:"三个月死了十一个，都会武，都死在自己屋里，都没有伤。断河集的酒肆白天空着，掌灯之后才满——听说有个穿旧官服的醉汉，十年前验过那三千具尸。"}},
+
+ {n:"第四章 · 旧梦重织",at:"c4a",r:3,d:"她在梦里说：你这一线，还在外面。",
+  g:{act:"sit",tod:["deep"],needTx:"须在子时静坐"},
+  clue:{t:"干涸的河床",tx:"你近来夜里总梦见同一条干涸的河床，醒来记不住她说了什么。要在梦里站得住，得等夜深——子时打坐，把气沉下去，看她还说什么。"}},
+
+ {n:"第五章 · 河底下的屋子",at:"c5a",r:4,d:"洛水断流的那七日，底下露出过什么。",
+  g:{loc:"kuhe",spot:"xiaxing",need:s=>s.flags.pei_case||(s.aff.pei||0)>=10,needTx:"须裴无咎肯把旧河道图给你看"},
+  clue:{t:"三十丈以下",tx:"裴无咎有一张偷临的旧河道图。他说十年前断流那七日，河床全露出来了，下去过八个人，回来两个。枯河谷有一道裂缝斜着往下走，宽得容得下一个人侧身。"}},
+
+ {n:"第六章 · 三千人的债",at:"c6a",r:5,d:"不是杀。是取线。",
+  g:{loc:"qingpu",spot:"huntun",tod:["dusk","night","deep"],need:s=>(s.bag.tuben||0)>0||s.flags.saw_roster,needTx:"须先在河底下拓到那本名册"},
+  clue:{t:"给他看名册",tx:"你从河底下带出了一卷拓本。这东西得给裴无咎看——他掌灯以后总在青蒲镇的馄饨摊上，捧着碗不吃，就着热气喝酒。"}},
+
+ {n:"第七章 · 无影者",at:"c7a",r:6,d:"从裂里出来的东西，学得很快。",
+  g:{loc:"wuying",spot:"linbian",need:s=>s.flags.know_lie,needTx:"须先知道裂在哪儿"},
+  clue:{t:"林边等你的人",tx:"无影者开始往外走了。断河集一夜空了三户人家，饭还温着。裴无咎说裂在无影林中间——而谢无影每一次都等在林边，从来不往里走。"}},
+
+ {n:"第八章 · 针娘",at:"c8a",r:7,d:"最后一任司针，快缝不动了。",
+  g:{loc:"zhishi",spot:"menkou",need:s=>s.flags.xie_dead,needTx:"须先了结谢无影"},
+  clue:{t:"门开着",tx:"谢无影散成一地线之后，你想起河底下那间屋子——四壁挂满了布，中间一把空椅子。这一回，门大约是开着的。"}},
+
+ {n:"第九章 · 一线之外",at:"c9a",r:8,d:"你为什么杀不死。",
+  g:{loc:"dukou",spot:"chuan",tod:["dusk"],need:s=>s.flags.truth,needTx:"须先听桑照把话说完"},
+  clue:{t:"二十六年前那一夜",tx:"桑照说，那孩子今年二十六岁。这世上记性最坏、又最肯记的人只有一个——渡老。黄昏时候他总在船上抽烟，那是他一天里话最多的时候。"}},
+
+ {n:"终章 · 天衣",at:"c10a",r:8,d:"缝、断、织。你只能选一个。",
+  g:{loc:"lie"},
+  clue:{t:"九丈",tx:"口子现在有九丈。桑照的手已经握不住针了，她把针放在你面前的石头上。该去裂前了。"}},
 ];
+/* 线索：还差什么，一条一条摊开给你看 */
+function chapNow(){return S.end?null:CHAP[S.ch];}
+function storyRows(){
+ const c=chapNow();if(!c)return [];
+ const g=c.g||{},rows=[];
+ rows.push(["火候",S.lvl>=c.r?REALM[c.r].n+"　已足":"须得「"+REALM[c.r].n+"」之境（今 "+REALM[S.lvl].n+"）",S.lvl>=c.r]);
+ if(g.loc){
+  const L=LOC[g.loc],sp=g.spot?spotOf(g.loc,g.spot):null;
+  const where=L.n+(sp?" · "+sp.n:"");
+  let st,ok=0;
+  if(S.loc===g.loc){ ok=!g.spot||S.spot===g.spot; st=where+(ok?"　你就在此处":"　你在"+curSpot().n+"，还得挪几步"); }
+  else if(locOpen(g.loc)){const d=roadDist(g.loc);st=where+"　"+(d>0?d+" 程之外":"路上还隔着地方");}
+  else if(heardOf(g.loc)) st=where+"　只听人说过，路还没走通";
+  else st="？　你还不知道该往哪儿去（找人打听）";
+  rows.push(["去处",st,ok]);
+ }
+ if(g.act)rows.push(["手上",ACT[g.act].n+(S.act===g.act?"　正做着":"　你眼下在"+ACT[S.act].n),S.act===g.act]);
+ if(g.tod){const ok=todIn(g.tod);
+  rows.push(["时候",g.tod.map(k=>TOD.find(t=>t.k===k).n).join("、")+"　（今 "+todName()+"）",ok]);}
+ if(g.need)rows.push(["别的",(g.needTx||"还差一件事")+(g.need(S)?"　已了":""),!!g.need(S)]);
+ else if(g.needTx&&!g.act)rows.push(["别的",g.needTx,1]);
+ return rows;
+}
+function storyReady(){
+ const c=chapNow();if(!c)return false;
+ if(sceneQ||S.trip||BT)return false;
+ const g=c.g||{};
+ if(S.lvl<c.r)return false;
+ if(g.loc&&S.loc!==g.loc)return false;
+ if(g.spot&&S.spot!==g.spot)return false;
+ if(g.act&&S.act!==g.act)return false;
+ if(g.tod&&!todIn(g.tod))return false;
+ if(g.need&&!g.need(S))return false;
+ return true;
+}
+function chapReady(){return storyReady();}
+/* 到了地方、到了时候，事情自己找上来 */
+function checkStory(){
+ if(!S||S.end||sceneQ||BT)return;
+ if($("#ov").innerHTML)return;
+ if(S.hold&&Date.now()-S.hold<(S.holdMs||10000))return;
+ if(storyReady()){
+  const c=CHAP[S.ch];
+  sfx("needle");
+  addLog("——　"+c.n+"　——","v");
+  showScene(S.scene&&SC[S.scene]?S.scene:c.at);
+  return;
+ }
+ nudge();
+}
+/* 到了地方却不是时候：轻轻提一句，只提一次 */
+function nudge(){
+ const c=chapNow();if(!c)return;const g=c.g||{};
+ if(!g.loc||S.loc!==g.loc||S.lvl<c.r)return;
+ S.nudge=S.nudge||{};
+ if(g.spot&&S.spot!==g.spot){
+  const key=S.ch+":spot";if(S.nudge[key])return;S.nudge[key]=1;
+  addLog("你要找的多半不在这儿——该去的是"+spotOf(g.loc,g.spot).n+"。","v");return;}
+ if(g.tod&&!todIn(g.tod)){
+  const key=S.ch+":tod";if(S.nudge[key])return;S.nudge[key]=1;
+  addLog("这地方"+g.tod.map(k=>TOD.find(t=>t.k===k).n).join("或")+"大约另有光景。眼下太"+(todKey()==="noon"?"亮":"早")+"了。","v");return;}
+ if(g.need&&!g.need(S)){
+  const key=S.ch+":need";if(S.nudge[key])return;S.nudge[key]=1;
+  addLog("你站在这里，觉得还缺一样东西——"+(g.needTx||"说不上来是什么")+"。","v");}
+}
 const SC={
 /* ── 一 ── */
 c1a:{t:"渡口无名",p:["你是被水声弄醒的。",
@@ -1121,9 +1396,11 @@ function newGame(name,orig){
   bonus:{gu:0,mai:0,ling:0,shi:0,yuan:0},
   exp:0,lvl:0,arts:{},eq:{nei:null,shen:null,form:[]},
   gear:{weapon:null,armor:null,boots:null,charm:null},
-  own:[],bag:{},silver:O.silver,act:"sit",actSub:null,loc:"dukou",visit:{},
-  locs:["dukou"],flags:{},aff:{},weave:0,hpPct:1,
-  t:Date.now(),born:Date.now(),days:0,kills:0,evs:0,end:null,
+  own:[],bag:{},silver:O.silver,act:"sit",actSub:null,loc:"dukou",spot:"chuan",visit:{},
+  locs:["dukou"],been:{dukou:1},heard:{},scout:{},trip:null,pace:"walk",
+  found:{},sweep:{},ask:{},nudge:{},clueSeen:-1,hold:0,
+  flags:{},aff:{},weave:0,hpPct:1,
+  t:Date.now(),born:Date.now(),days:0,playSec:0,kills:0,evs:0,end:null,
   ...O.init};
 }
 const ORIGIN={
@@ -1249,8 +1526,14 @@ function rates(s){
  };
 }
 function tick(s,dt,off){ // dt 秒
- const R=rates(s),act=s.act;
  s.playSec=(s.playSec||0)+dt; s.days=Math.floor(s.playSec/1200);
+ if(s.trip){ if(!off)tripTick(dt); return; }
+ const act=s.act;
+ if(["herb","mine","silk"].includes(act)){
+  const sp=spotOf(s.loc,s.spot);
+  if(!(sp.acts||[]).includes(act)){s.act="sit";if(!off)addLog("这处做不得那桩活计，你就地打坐。","m");return;}
+ }
+ const R=rates(s);
  if(act==="sit"){gainExp(s,R.sit*dt);artExp(s,s.eq.nei,R.sit*dt*1.1);}
  else if(act==="form"){const id=s.actSub||s.eq.form[0];artExp(s,id,R.form*dt);gainExp(s,R.sit*dt*0.25);}
  else if(act==="step"){artExp(s,s.eq.shen,R.step*dt);gainExp(s,R.sit*dt*0.25);}
@@ -1263,11 +1546,20 @@ function tick(s,dt,off){ // dt 秒
   gainExp(s,R.sit*dt*0.12);
  } else if(act==="walk"){
   gainExp(s,R.sit*dt*0.4);
-  const n=R.walk*dt; s.evF=(s.evF||0)+n;
+  const n=R.walk*dt*(curSpot().wild?1.4:1); s.evF=(s.evF||0)+n;
   if(!off){ if(s.evF>=1){s.evF=0;rollEvent(s);} }
   else { const k=Math.min(Math.floor(s.evF),12); if(k>0){s.evF=0; s.offEv=(s.offEv||0)+k;
     for(let i=0;i<k;i++){s.silver+=ri(10,60);gainExp(s,60+s.lvl*40);if(rnd(1)<.4)item2(s,pick(["sanqi","tiesha","cansi","canye"]));}}}
  }
+}
+/* 天色一变，该在的人在，该来的事来 */
+const TODLINE={dawn:"天擦亮了。远处有人在喊渡。",noon:"日头到了当中，影子缩成一小团。",
+ dusk:"天色暗下来，铺子一家一家上灯。",night:"入夜了。路上没什么人。",
+ deep:"子时。你听得见自己的呼吸。"};
+function todTurn(){
+ addLog(TODLINE[todKey()]||"","m");
+ if(document.body)document.body.dataset.tod=todKey();
+ if(!$("#ov").innerHTML)renderMain();
 }
 function item2(s,id){s.bag[id]=(s.bag[id]||0)+1;}
 let qg={},qgT=0;
@@ -1393,19 +1685,24 @@ function probe(){
  save();render();
 }
 function rollEvent2(){ if(sceneQ)return false; rollEvent(S); return true; }
-/* 到一个地方，多半什么也不发生 */
-function arrive(){
+/* 到一个地方，多半什么也不发生。夜里例外。 */
+function arrive(first){
  if(sceneQ||S.end)return;
- const r=rnd(1);
- if(r<.50)return;                 // 什么也没有
- if(r<.74){ambient();return;}     // 只是景致
- if(r<.93){rollEvent(S);return;}  // 遇上一桩事
- rollEnc();                       // 少数时候才是麻烦
+ if(first){
+  addLog("<b>"+LOC[S.loc].n+"</b>　"+LOC[S.loc].d,"y");
+  weave(S,1);gainExp(S,200+S.lvl*120);
+ }
+ const r=rnd(1), night=todKey()==="night"||todKey()==="deep";
+ if(r<(first?.34:.50))return;
+ if(r<.74){ambient();return;}
+ if(r<(night?.88:.93)){rollEvent(S);return;}
+ rollEnc();
 }
-/* ───────── 方位与搜索 ───────── */
+/* ───────── 方位 ───────── */
 const DIRN={n:"北",s:"南",e:"东",w:"西"};
 function dirOf(a,b){const A=LOC[a],B=LOC[b];
- if(B.y<A.y)return "n"; if(B.y>A.y)return "s"; if(B.x>A.x)return "e"; return "w";}
+ const dx=B.mx-A.mx,dy=B.my-A.my;
+ return Math.abs(dx)>Math.abs(dy)?(dx>0?"e":"w"):(dy>0?"s":"n");}
 function nbr(d){const L=LOC[S.loc];
  return (L.to||[]).find(t=>LOC[t]&&locOpen(t)&&dirOf(S.loc,t)===d);}
 /* 一处一桩，搜出来才算数 */
@@ -1448,32 +1745,89 @@ function giveGift(k){
  aff(S,k,g.n);sfx("thread");save();render();
 }
 function searched(k){return (S.found||{})[k];}
-function sweepCd(){return 300000;}
+function sweepCd(){return 240000;}
+function spotKey(){return S.loc+":"+S.spot;}
+/* 搜：先搜出这处去处藏着的那一桩，搜过了就只是翻翻捡捡 */
 function searchHere(){
- const k=S.loc,F=FIND[k];
+ if(S.trip){toast("你正在路上。");return;}
+ const sp=curSpot(),k=sp.find;
  S.found=S.found||{};S.sweep=S.sweep||{};
- if(F&&!S.found[k]){
-  S.found[k]=1;
+ if(k&&FIND[k]&&!S.found[k]){
+  const F=FIND[k];S.found[k]=1;
   sfx("needle");
   ov('<h2>'+F.t+'</h2><div class="seam gold"></div><div class="story"><p>'+F.tx+'</p></div>'+
    '<div class="btns"><button class="btn pri" id="ok">收</button></div>')
-   .querySelector("#ok").onclick=()=>{closeOv();render();};
+   .querySelector("#ok").onclick=()=>{closeOv();render();checkStory();};
   F.f(S);save();renderMain();return;
  }
- const left=sweepCd()-(Date.now()-(S.sweep[k]||0));
- if(left>0){toast("这里刚翻过，再等 "+Math.ceil(left/60000)+" 分钟");return;}
- S.sweep[k]=Date.now();
- const L=LOC[k];
+ const key=spotKey();
+ const left=sweepCd()-(Date.now()-(S.sweep[key]||0));
+ if(left>0){toast("这处刚翻过，再等 "+Math.ceil(left/60000)+" 分钟");return;}
+ S.sweep[key]=Date.now();
+ const acts=sp.acts||[];
  if(rnd(1)<.55){
-  const pool=(L.acts||[]).includes("silk")?["cansi","zhen"]:(L.acts||[]).includes("herb")?["sanqi","xuejian"]:["tiesha","hantie"];
+  const pool=acts.includes("silk")?["cansi","zhen"]:acts.includes("herb")?["sanqi","xuejian"]:["tiesha","hantie"];
   item(S,pick(pool),ri(1,2));
- } else if(rnd(1)<.3){const m=ri(8,40)*(1+S.lvl);S.silver+=m;addLog("墙缝里抠出 "+fmt(m)+" 文。","y");}
- else addLog(pick(["你把这一带翻了一遍，什么也没有。","除了土就是土。","你翻出半只破鞋。看了看，又放回去了。"]),"m");
+ } else if(rnd(1)<.34){const m=ri(8,40)*(1+S.lvl);S.silver+=m;addLog("墙缝里抠出 "+fmt(m)+" 文。","y");}
+ else addLog(pick(["你把这一处翻了一遍，什么也没有。","除了土就是土。","你翻出半只破鞋。看了看，又放回去了。",
+   "手上沾了一层灰，别的没有。"]),"m");
  save();renderMain();
 }
-/* ───────── 行路：舆图是一棵树，只能沿路走 ───────── */
+/* ───────── 打听：江湖不给你指路，你得自己问 ───────── */
+const RUMOR=[
+ "「听说没有？磐钟寺那口大钟，前儿夜里自己响了一声。」",
+ "「铁砧堡上个月收了一车废兵器，收的时候是三车，路上少了两车。」",
+ "「剑冢野有人夜里点灯找什么。找了七天，人没了，灯还在。」",
+ "「云绣坊的绣娘不接绣人像的活了。给多少钱都不接。」",
+ "「枯河谷底下有响动，一下一下的，像有人在底下做针线。」",
+ "「城里又死了一个，还是没伤。仵作这回连门都没进。」",
+];
+function askCd(){return 90000;}
+function askAround(){
+ if(S.trip){toast("你正在路上。");return;}
+ const sp=curSpot();
+ if(!sp.ask){toast("这处没什么人可问。");return;}
+ S.ask=S.ask||{};
+ const left=askCd()-(Date.now()-(S.ask[S.loc]||0));
+ if(left>0){toast("这一带的话你都问遍了。再等 "+Math.ceil(left/60000)+" 分钟");return;}
+ S.ask[S.loc]=Date.now();
+ S.heard=S.heard||{};
+ sfx("tap");
+ // 一、先把当前线索指的地方点出来
+ const c=CHAP[S.ch],g=c&&c.g;
+ if(g&&g.loc&&!S.heard[g.loc]&&g.loc!==S.loc&&!locOpen(g.loc)){
+  S.heard[g.loc]=1;
+  addLog("有人给你指了路：<b>"+LOC[g.loc].n+"</b>。舆图上多了一处影子。","y");
+  save();renderMain();return;
+ }
+ // 二、没听说过的近处
+ const near=[];
+ for(const k of S.locs)for(const t of (LOC[k].to||[]))
+  if(LOC[t]&&!locOpen(t)&&!LOC[t].hidden&&!S.heard[t])near.push(t);
+ if(near.length&&rnd(1)<.6){
+  const t=pick(near);S.heard[t]=1;
+  addLog("有人提起一个地名：<b>"+LOC[t].n+"</b>。「往"+DIRN[dirOf(S.loc,t)]+"走，走得通走不通看你。」","y");
+  save();renderMain();return;
+ }
+ // 三、指一处还没搜过的去处
+ const un=[];
+ for(const k of S.locs)for(const sp2 of spots(k))
+  if(sp2.find&&FIND[sp2.find]&&!searched(sp2.find))un.push([k,sp2]);
+ if(un.length&&rnd(1)<.5){
+  const [k,sp2]=pick(un);
+  addLog("「"+LOC[k].n+"那边，"+sp2.n+"，」那人压低声音，「有人在那儿找着过东西。」","y");
+  save();renderMain();return;
+ }
+ addLog(pick(RUMOR),"m");
+ if(rnd(1)<.25)gain(S,"yuan",1);
+ save();renderMain();
+}
+/* ───────── 行路 ─────────
+   两地之间是有距离的。你得走过去，走要时候，路上会出事。
+   走着的时候练的是身法——脚底下的功夫，本来就是走出来的。   */
 function locOpen(k){return S.locs.includes(k);}
-function locVisible(k){return locOpen(k);}
+function heardOf(k){return !!((S.heard||{})[k]);}
+function locVisible(k){return locOpen(k)||heardOf(k);}
 function pathTo(from,to){
  if(from===to)return [];
  if(!locOpen(to))return null;
@@ -1487,20 +1841,157 @@ function pathTo(from,to){
  return null;
 }
 function stepsTo(k){const p=pathTo(S.loc,k);return p?p.length:-1;}
-function travel(k){
- if(k===S.loc||!LOC[k])return;
- const p=pathTo(S.loc,k);
- if(!p){toast("去不了——路上还隔着没走通的地方。");return;}
- let hit=null;
- for(const step of p){
-  const from=LOC[S.loc].n;S.loc=step;
-  addLog("你离了"+from+"，一路走到 <b>"+LOC[step].n+"</b>。","");
-  sfx(step==="dukou"||from==="洛水渡口"?"water":"step");
-  if(!hit&&rnd(1)<.2)hit=1;
+function roadDist(k){const p=pathTo(S.loc,k);if(!p)return -1;
+ let d=0,c=S.loc;for(const t of p){d+=roadLen(c,t);c=t;}return d;}
+/* 脚程：身法、捷、路面、缓急，都算在里头 */
+function paceMul(){return S.pace==="fast"?1.55:1;}
+function tripSpeed(){
+ const st=stats(S);
+ return (2.3+st.spd*0.03+artLv(S,S.eq.shen)*0.06)*paceMul();
+}
+function legInit(from,to,scout){
+ const d=Math.hypot(LOC[from].mx-LOC[to].mx,LOC[from].my-LOC[to].my)*(scout?1.5:1);
+ const rk=roadOf(from,to);
+ const t={from,to,d,prog:0,rk:ROAD[roadKey(from,to)]||"ye"};
+ const chance=(scout?.30:.22)*rk.enc*TOD[todIdx()].enc*(S.pace==="fast"?.7:1.1);
+ t.evAt=rnd(1)<cl(chance,0,.6)?d*(0.22+rnd(0.62)):-1;
+ return t;
+}
+function startTrip(k){
+ if(S.end)return;
+ if(S.trip){toast("你正在路上。");return;}
+ if(k===S.loc){toast("你就在此处。");return;}
+ if(!LOC[k])return;
+ if(!locOpen(k)){
+  if((LOC[S.loc].to||[]).includes(k))return scoutTo(k);
+  toast(heardOf(k)?"只听人说过，路还没走通。":"去不了——路上还隔着没走通的地方。");return;
  }
- if(p.length>1)addLog("这一趟走了 "+p.length+" 程。","m");
- bgm(bgmFor(S.loc));save();render();
- if(hit&&!sceneQ&&!S.end)rollEvent(S); else arrive();
+ const p=pathTo(S.loc,k);
+ if(!p||!p.length){toast("去不了——路上还隔着没走通的地方。");return;}
+ S.trip={goal:k,path:p,i:0,leg:legInit(S.loc,p[0]),stop:0};
+ addLog("你动身往 <b>"+LOC[k].n+"</b> 去。"+(p.length>1?"中间要过 "+(p.length-1)+" 处。":""),"");
+ sfx("step");save();renderMain();
+}
+/* 探路：连出去的那条路你还没走通，走走看 */
+function scoutTo(t){
+ if(S.trip)return;
+ if(!LOC[t])return;
+ if(LOC[t].hidden){
+  addLog("那个方向似乎有路。你走了半日，走回了原地——不是路没有，是路不肯让你看见。","m");
+  save();return;}
+ S.scout=S.scout||{};
+ S.trip={goal:t,path:[t],i:0,leg:legInit(S.loc,t,1),stop:0,scout:1};
+ addLog("你往"+DIRN[dirOf(S.loc,t)]+"探路。"+(heardOf(t)?"听人说过那头是"+LOC[t].n+"。":"那头有什么，你不知道。"),"");
+ sfx("step");save();renderMain();
+}
+function scoutOdds(t){
+ const st=stats(S),tries=(S.scout||{})[t]||0;
+ return cl(.26+(S.lvl-(LOC[t].lv||0))*.07+st.a.yuan*.012+tries*.2,.08,.94);
+}
+function stopTrip(){
+ const T=S.trip;if(!T)return;
+ if(T.leg.prog<T.leg.d*.5){
+  addLog("你在半路上站住，想了想，折了回去。","m");
+  S.trip=null;save();render();return;
+ }
+ T.stop=1;T.path=[T.leg.to];T.i=0;T.goal=T.leg.to;
+ addLog("你不再往远处去，走到 "+LOC[T.leg.to].n+" 就歇下。","m");
+ renderMain();
+}
+function setPace(p){S.pace=p;save();renderMain();}
+/* 每一息推一点。挡在前头的窗子（奇遇、交手）没关，脚就停着 */
+function tripTick(dt){
+ const T=S.trip;if(!T)return;
+ if(BT||$("#ov").innerHTML||sceneQ)return;
+ const L=T.leg,sp=tripSpeed()*roadOf(L.from,L.to).sp;
+ const was=L.prog;L.prog+=sp*dt;
+ artExp(S,S.eq.shen,rates(S).step*dt*0.75);
+ gainExp(S,rates(S).sit*dt*0.2);
+ if(L.evAt>=0&&was<L.evAt&&L.prog>=L.evAt){L.evAt=-1;roadEvent(L);return;}
+ if(L.prog>=L.d)legDone();
+}
+function legDone(){
+ const T=S.trip,L=T.leg;
+ if(T.scout){
+  const t=L.to,ok=rnd(1)<scoutOdds(t);
+  S.scout=S.scout||{};
+  if(ok){
+   S.trip=null;
+   unlock(S,t);S.heard=S.heard||{};S.heard[t]=1;
+   addLog("路是有的，只是从前没人给你指。你走通了 <b>"+LOC[t].n+"</b>。","g");
+   enterLoc(t,true);
+  } else {
+   S.scout[t]=(S.scout[t]||0)+1;S.trip=null;
+   addLog(pick(["路越走越不对，草比人高，你退了回来。","走了半日，前头是一道塌方。你折了回来。",
+     "你在林子里绕了个圈，又回到了出发的地方。","天色不好，你没敢再往里走。"]),"m");
+   S.hpPct=cl((S.hpPct||1)-0.04,.1,1);
+   if(rnd(1)<.3)rollEnc();
+   save();render();
+  }
+  return;
+ }
+ const first=!(S.been||{})[L.to];
+ enterLoc(L.to,first,true);
+ T.i++;
+ if(T.stop||T.i>=T.path.length){
+  S.trip=null;save();render();arrive(first);checkStory();return;
+ }
+ T.leg=legInit(S.loc,T.path[T.i]);
+ save();renderMain();
+}
+/* 走进一处地方 */
+function enterLoc(k,first,quiet){
+ S.loc=k;S.been=S.been||{};
+ S.spot=spots(k)[0].id;
+ if(!locOpen(k))unlock(S,k);
+ if(!S.been[k])S.been[k]=1;
+ addLog("你到了 <b>"+LOC[k].n+"</b>。","");
+ sfx(k==="dukou"?"water":"step");
+ bgm(bgmFor(k));
+ if(!quiet){save();render();arrive(first);checkStory();}
+}
+/* 路上：多半是景致，偶尔是麻烦 */
+const ROADAMB={
+ guan:["路上有人赶着驴车过去，车板上摞着空筐。","有个货郎跟你走了一段，说了一路的闲话，到岔路口就分了。",
+  "道边的界碑上刻着里数，字被人凿掉了一半。"],
+ shan:["山道上没有别人。你的脚步声回来得比该有的慢。","一只鸟从崖底飞上来，比你高的时候还在往上飞。",
+  "石阶上的字被雨冲得发白，今天格外清楚。"],
+ ye:["草长到胸口，你分开草走，草在你身后合上。","野地里有一处烧过的痕迹，还是新的。",
+  "你踩到一样硬东西，低头看，是半截没有柄的刀身。"],
+ shui:["船在水上走，两岸往后退。水面上那层东西被船头分开，又合上。","撑船的不是渡老。他一路没说话。",
+  "水声底下像还有一层别的声音，听久了就没有了。"],
+ di:["两壁越来越近，你侧着身子过去。","头顶那条天越来越细，最后细成一根线。","这底下是暖的，暖得不像地底下。"],
+};
+function roadEvent(L){
+ const r=rnd(1);
+ if(r<.30){ // 路上遇着人
+  const here=S.loc;S.loc=rnd(1)<.5?L.from:L.to;
+  const ok=rollEnc();S.loc=here;
+  if(ok){addLog("你在路上被人拦下了。","r");return;}
+ }
+ if(r<.58){ const here=S.loc;S.loc=L.to;rollEvent(S);S.loc=here;return; }
+ if(r<.80){ addLog(pick(ROADAMB[L.rk]||ROADAMB.ye),"m");return; }
+ if(r<.90){ const m=ri(10,50)*(1+S.lvl);S.silver+=m;
+  addLog("路边草里有个布包，里头 "+fmt(m)+" 文，没有别的。","y");return; }
+ // 岔路：说不定通着什么地方
+ const cand=[];
+ for(const t of (LOC[L.to].to||[]))if(LOC[t]&&!locOpen(t)&&!LOC[t].hidden&&!heardOf(t))cand.push(t);
+ if(cand.length){const t=pick(cand);S.heard=S.heard||{};S.heard[t]=1;
+  addLog("路边有一条岔道，踩得很实，是常走的。顺着望过去，大约是 <b>"+LOC[t].n+"</b> 的方向。","y");
+  renderMain();return;}
+ addLog(pick(ROADAMB[L.rk]||ROADAMB.ye),"m");
+}
+/* 在同一处地方里挪窝——不要时候，但要走到跟前 */
+function goSpot(id){
+ if(S.trip){toast("你正在路上。");return;}
+ const sp=spotOf(S.loc,id);if(!sp||sp.id===S.spot){return;}
+ S.spot=sp.id;
+ addLog("你走到"+sp.n+"。"+(sp.d||""),"m");
+ const acts=sp.acts||[];
+ if(["herb","mine","silk"].includes(S.act)&&!acts.includes(S.act)){
+  S.act="sit";addLog("这处做不得那桩活计，你就地打坐。","m");}
+ if(sp.wild&&rnd(1)<.14)rollEnc();
+ save();render();checkStory();
 }
 function rollEvent(s){
  if(sceneQ)return;
@@ -1653,7 +2144,10 @@ function showScene(id){
  if(ok)ok.onclick=()=>{ if(sc.end){S.end=sc.end;S.scene=null;closeOv();endScreen();save();return;}
    if(sc.to)showScene(sc.to); else advance(); };
 }
-function advance(){ S.ch++; S.scene=null; closeOv(); save(); render();
+function advance(){ S.ch++; S.scene=null; S.hold=Date.now(); S.holdMs=10000;
+ closeOv(); save(); render();
+ if(!S.flags.taught){flag(S,"taught");setTimeout(guideBox,500);
+  addLog("（舆图在底下。走路要时候。线索在「纪事」里。）","m");}
  addLog("这一段江湖，你走完了。","v"); toast("章节推进"); }
 function battleIntro(sc){
  const f=FOE[sc.b.foe];
@@ -1662,7 +2156,8 @@ function battleIntro(sc){
   '<p class="no muted">'+f.n+'　气血 '+fmt(foeNum(f).hp)+'　攻 '+fmt(foeNum(f).atk)+'　御 '+fmt(foeNum(f).def)+'　捷 '+foeNum(f).spd+'</p></div>'+
   '<div class="btns"><button class="btn" id="wait">先不打</button><button class="btn pri" id="go">动手</button></div>';
  const sh=ov(h);
- sh.querySelector("#wait").onclick=()=>{closeOv();save();render();addLog("你退开了。此战可在「纪事」里重来。","");};
+ sh.querySelector("#wait").onclick=()=>{S.hold=Date.now();S.holdMs=90000;
+  closeOv();save();render();addLog("你退开了。等你想好了，在「纪事」里接着走。","");};
  sh.querySelector("#go").onclick=()=>fight(S,sc.b.foe,null,null,sc.b);
 }
 function nameDialog(){
@@ -1757,64 +2252,211 @@ function endScreen(){
  ov(h).querySelector("#ok").onclick=()=>{closeOv();render();};
 }
 
+/* ═══════════ 怎么走 ═══════════ */
+const GUIDE=[
+ ["脚下","眼前这一处底下分几个「去处」。人站在去处上，活计也认去处——药在坡上，铁在砂里，丝在机房。要做哪一桩，先走到那儿去。"],
+ ["行路","舆图在底下那半屏。点一处地方就动身。路是要走的，走要时候，路上会撞见事：缓行见闻多，疾行快而少事。半路上也可以不走了。"],
+ ["探路","图上虚的那些，是听人说过、或者只看得见一个方向的地方。走到路口上「探路」，通不通看火候和运气——走得多了，总会通。"],
+ ["打听","不知道该往哪儿去，就在集上、酒肆、馄饨摊「打听」。江湖不给你标路，但总有人肯说一句。渡老也肯说，只是他记不住你。"],
+ ["时辰","一日五个时辰：拂晓、晌午、黄昏、入夜、子时。谁在不在，夜路好不好走，有些门开不开，都看天色。"],
+ ["故事","没有「往下走」可点。你手上只有一条线索——一句话、一个地名、一个时候，在「纪事」里摊着。人到了，时候到了，火候到了，事情自己会找上来。"],
+];
+function guideBox(){
+ let h='<h2>怎么走</h2><div class="seam gold"></div><div class="story">';
+ for(const [t,d] of GUIDE)h+='<p class="no"><b style="color:var(--thread);font-weight:400">'+t+'　</b>'+d+'</p>';
+ h+='</div><div class="btns"><button class="btn pri" id="ok">知道了</button></div>';
+ ov(h,1).querySelector("#ok").onclick=closeOv;
+}
 /* ═══════════ 主界面 ═══════════ */
 const DRAWER=[["wu","武学"],["bag","行囊"],["men","门派"],["map","舆图"],["ji","纪事"],["set","设置"]];
 
-function render(){ if(!S)return; renderChar(); renderMain(); renderLog();
+function render(){ if(!S)return; renderChar(); renderMain(); renderLog(); clockTx(); }
+function clockTx(){
  const c=$("#clock"),v=$("#silver");
- if(c)c.textContent="江湖第 "+(S.days+1)+" 日";
+ if(c)c.innerHTML="江湖第 "+(S.days+1)+" 日　<b>"+todName()+"</b>";
  if(v)v.innerHTML="银两 <b>"+fmt(S.silver)+"</b>";
+ if(document.body&&document.body.dataset.tod!==todKey())document.body.dataset.tod=todKey();
 }
 function renderMain(){
- const W=$("#world"),D=$("#drawer");
- if(!W)return;
- W.innerHTML=worldHtml();
+ const W=$("#world"),D=$("#drawer"),H=$("#here");
+ if(!H)return;
+ H.innerHTML=hereHtml();
+ W.innerHTML=mapHtml();
  D.innerHTML=DRAWER.map(([k,n])=>'<button class="chip" data-open="'+k+'">'+n+
-   (k==="ji"&&chapReady()?'<span class="dot"></span>':'')+'</button>').join("");
+   (k==="ji"&&S.clueSeen!==S.ch&&!S.end?'<span class="dot"></span>':'')+'</button>').join("");
  bind();
 }
-/* 舆图即主界面：眼下这一处摆在当中，四邻连着它 */
-function worldHtml(){
- const L=LOC[S.loc];
- const node=d=>{
-  const t=nbr(d);
-  const glyph={n:"↑ 北",s:"↓ 南",e:"→ 东",w:"← 西"}[d];
-  if(!t){
-   const blind=(L.to||[]).some(x=>LOC[x]&&!locOpen(x)&&dirOf(S.loc,x)===d);
-   return blind?'<div class="node dim"><div class="ar">'+glyph+'</div><div class="nm">？</div>'+
-     '<div class="st">还没走通</div></div>':'<div></div>';
-  }
-  const T=LOC[t],who=(T.npc||[]).filter(x=>NPC[x]).length;
-  return '<div class="node" data-go="'+t+'"><div class="ar">'+glyph+'</div>'+
-   '<div class="nm">'+T.n+'</div><div class="st">'+
-   ((T.acts||[]).map(a=>ACT[a].n).join("·")||"—")+(T.shop?" 集市":"")+(who?" 有人":"")+'</div></div>';
- };
- return '<div class="wgrid">'+
-  '<div></div>'+node("n")+'<div></div>'+
-  node("w")+hubHtml()+node("e")+
-  '<div></div>'+node("s")+'<div></div></div>';
+/* ── 谁在跟前 ── */
+function npcHere(k,spid){
+ return Object.keys(NPC).filter(id=>{
+  const N=NPC[id];
+  if(N.loc!==k)return false;
+  if(spid&&N.spot&&N.spot!==spid)return false;
+  if(N.need&&!N.need(S))return false;
+  return todIn(N.tod);
+ });
 }
-function hubHtml(){
- const L=LOC[S.loc];
- let h='<div class="hub"><div class="nm">'+L.n+'</div><div class="dd">'+L.d+'</div>';
- const here=(L.npc||[]).filter(k=>NPC[k]);
- if(here.length){h+='<div class="tagl">此 地 有 人</div><div class="wrow">';
+function npcAway(k,spid){
+ return Object.keys(NPC).filter(id=>{const N=NPC[id];
+  return N.loc===k&&(!spid||!N.spot||N.spot===spid)&&(!N.need||N.need(S))&&!todIn(N.tod);});
+}
+function spotMark(x){
+ let m="";
+ if(x.find&&FIND[x.find]&&!searched(x.find))m+='<b title="有东西没搜出来">✦</b>';
+ if(npcHere(S.loc,x.id).length)m+='<i title="有人">●</i>';
+ if(x.shop)m+='<u title="买卖">市</u>';
+ return m?'　'+m:'';
+}
+/* ── 此地 ── */
+function hereHtml(){
+ if(S.trip)return roadHtml();
+ const L=LOC[S.loc],sp=curSpot();
+ let h='<div class="lochd"><div class="locn">'+L.n+'</div>'+
+  '<div class="loct">'+(L.reg||"")+'　·　'+todName()+'　·　'+ACT[S.act].n+'</div></div>';
+ h+='<div class="locd">'+(sp.d||L.d)+'</div>';
+
+ h+='<div class="tagl">去 处</div><div class="wrow">';
+ for(const x of spots(S.loc))
+  h+='<button class="chip'+(x.id===S.spot?" on":"")+'" data-spot="'+x.id+'">'+x.n+spotMark(x)+'</button>';
+ h+='</div>';
+
+ const here=npcHere(S.loc,S.spot),away=npcAway(S.loc,S.spot);
+ if(here.length||away.length){
+  h+='<div class="tagl">跟 前</div><div class="wrow">';
   for(const k of here)h+='<button class="chip" data-who="'+k+'">'+NPC[k].n+
-   (S.aff[k]?'　<b>'+S.aff[k]+'</b>':'')+'</button>';
-  h+='</div>';}
- const acts=["sit","form","step",...(L.acts||[]),"walk"];
+    (S.aff[k]?'　<b>'+S.aff[k]+'</b>':'')+'</button>';
+  for(const k of away)h+='<button class="chip" disabled>'+NPC[k].n+'　<i>'+whenTx(NPC[k])+'</i></button>';
+  h+='</div>';
+ }
+
+ const acts=["sit","form","step",...(sp.acts||[]),"walk"];
  h+='<div class="tagl">手 上 的 活</div><div class="wrow">';
  for(const a of acts)h+='<button class="chip'+(S.act===a?" on":"")+'" data-act="'+a+'">'+ACT[a].n+'</button>';
  h+='</div>';
  if(S.act==="form")h+=formPick();
- if(chapReady())h+='<div class="wrow"><button class="chip on" data-ch="1">往下走　'+CHAP[S.ch].n+'</button></div>';
- h+='<div class="wrow"><button class="chip" data-probe="1">探一探</button>'+
+
+ h+='<div class="tagl">动 一 动</div><div class="wrow">'+
+  '<button class="chip" data-probe="1">探一探</button>'+
   '<button class="chip" data-search="1">'+
-  (FIND[S.loc]&&!searched(S.loc)?"搜一搜":"再翻一遍")+'</button>'+
-  (L.shop?'<button class="chip" data-open="shop">上集市</button>':'')+
-  '<button class="chip" data-open="map">全图</button></div>';
- h+='<div class="m" style="margin-top:8px">'+actRate()+'</div>';
- return h+'</div>';
+   (sp.find&&FIND[sp.find]&&!searched(sp.find)?'搜一搜　<b>✦</b>':'再翻一遍')+'</button>'+
+  (sp.ask?'<button class="chip" data-ask="1">打听</button>':'')+
+  (sp.shop?'<button class="chip" data-open="shop">上集市</button>':'')+
+  '</div>';
+
+ h+='<div class="tagl">往 哪 儿 走</div><div class="wrow">';
+ const near=(L.to||[]).filter(t=>LOC[t]);
+ for(const t of near){
+  const d=dirOf(S.loc,t);
+  if(locOpen(t))h+='<button class="chip" data-go="'+t+'"><b>'+DIRN[d]+'</b> '+LOC[t].n+'　<i>'+roadOf(S.loc,t).n+' '+roadLen(S.loc,t)+'程</i></button>';
+  else if(LOC[t].hidden)continue;
+  else h+='<button class="chip gho" data-scout="'+t+'"><b>'+DIRN[d]+'</b> '+
+    (heardOf(t)?LOC[t].n:"？")+'　<i>探路</i></button>';
+ }
+ h+='<button class="chip" data-open="map">全图</button></div>';
+ h+='<div class="m" style="margin-top:9px">'+actRate()+'</div>';
+ return h;
+}
+function whenTx(N){
+ if(!N.tod||!N.tod.length)return "不在";
+ return N.tod.map(k=>TOD.find(t=>t.k===k).n).join("、")+"才在";
+}
+/* ── 在路上 ── */
+function roadHtml(){
+ const T=S.trip,L=T.leg,rk=roadOf(L.from,L.to);
+ const pc=cl(L.prog/L.d*100,0,100);
+ const left=Math.max(1,Math.ceil((L.d-L.prog)/(tripSpeed()*rk.sp)));
+ let h='<div class="lochd"><div class="locn">'+(T.scout?"探路":"在路上")+'</div>'+
+  '<div class="loct">'+todName()+'　·　'+rk.n+'　·　'+ACT.step.n+'</div></div>';
+ h+='<div class="locd">'+LOC[L.from].n+'　→　'+(T.scout&&!heardOf(L.to)?"？":LOC[L.to].n)+
+  (T.path.length-T.i>1?'　（再往后还有 '+(T.path.length-T.i-1)+' 程）':'')+'</div>';
+ h+='<div class="track" style="margin:6px 0 4px"><div class="fill qi" id="tripfill" style="width:'+pc+'%"></div></div>'+
+  '<div class="m" id="triptx">还有约 '+left+' 息</div>';
+ if(T.scout)h+='<div class="m">走得通走不通，要到了才知道。（约 '+Math.round(scoutOdds(L.to)*100)+' 分把握）</div>';
+ h+='<div class="tagl">脚 程</div><div class="wrow">'+
+  '<button class="chip'+(S.pace!=="fast"?" on":"")+'" data-pace="walk">缓行　<i>路上多见闻</i></button>'+
+  '<button class="chip'+(S.pace==="fast"?" on":"")+'" data-pace="fast">疾行　<i>快，少事</i></button>'+
+  '<button class="chip" data-stop="1">不走了</button></div>';
+ h+='<div class="m" style="margin-top:9px">走路也是练功——身法长得比坐着快。</div>';
+ return h;
+}
+/* ── 舆图：一块布，路是针脚 ── */
+function mapNodes(){
+ const out={};
+ for(const k in LOC){
+  if(locOpen(k)){out[k]="on";continue;}
+  if(heardOf(k)){out[k]="heard";continue;}
+  for(const o of S.locs)if((LOC[o].to||[]).includes(k)&&!LOC[k].hidden){out[k]="ghost";break;}
+ }
+ return out;
+}
+/* 图要把地方摊开：横着拉一拉，才填得满一条横的屏。
+   拉的只是位置，字和点还是圆的。                        */
+const MAPW=200,MAPH=118;
+function mapSX(big){
+ let w,h;
+ if(big)return 1;
+ const el=$("#world");w=(el&&el.clientWidth)||660;
+  h=cl((window.innerHeight||700)*.31,196,330);
+ if(!w||!h)return 1;
+ return cl((w/h)*MAPH/MAPW,1,2.5);
+}
+function mapHtml(big){
+ const N=mapNodes(),c=chapNow(),g=(c&&c.g)||{};
+ const tgt=g.loc&&N[g.loc]?g.loc:null;
+ const X=mapSX(big), px=k=>LOC[k].mx*X, py=k=>LOC[k].my;
+ let e="";
+ // 洛水：从磐钟山下来，过渡口，到断河集就断了
+ e+='<path class="river" d="M'+(46*X)+',6 C'+(56*X)+',28 '+(66*X)+',36 '+(88*X)+',62 C'+
+   (98*X)+',72 '+(110*X)+',60 '+(118*X)+',58"/>';
+ e+='<path class="river dry" d="M'+(118*X)+',58 C'+(130*X)+',62 '+(138*X)+',72 '+(144*X)+',80 C'+
+   (156*X)+',88 '+(168*X)+',94 '+(178*X)+',98"/>';
+ const rg=(t,x,y)=>'<text class="rg" x="'+(x*X)+'" y="'+y+'">'+t+'</text>';
+ e+=rg("磐 钟 山",30,20)+rg("缀 云",16,34)+rg("东 原",178,28)+
+    rg("剑 冢",84,108)+rg("枯 河",162,66)+rg("无 影",142,106);
+ for(const key in ROAD){
+  const [a,b]=key.split("|");
+  if(!N[a]||!N[b])continue;
+  e+='<line class="rd'+(N[a]==="on"&&N[b]==="on"?"":" un")+'" x1="'+px(a)+'" y1="'+py(a)+
+   '" x2="'+px(b)+'" y2="'+py(b)+'"/>';
+ }
+ if(tgt&&tgt!==S.loc)
+  e+='<line class="clueln" x1="'+px(S.loc)+'" y1="'+py(S.loc)+'" x2="'+px(tgt)+'" y2="'+py(tgt)+'"/>';
+ for(const k in N){
+  const L=LOC[k],st=N[k],cur=k===S.loc&&!S.trip,x=px(k),y=py(k);
+  const mark=[];
+  if(st==="on"&&S.been&&S.been[k]){
+   if(npcHere(k).length)mark.push("●");
+   if(spots(k).some(z=>z.find&&FIND[z.find]&&!searched(z.find)))mark.push("✦");
+  }
+  const d=st==="on"&&k!==S.loc?roadDist(k):0;
+  e+='<g class="mn '+st+(cur?" cur":"")+(k===tgt?" tgt":"")+'" data-'+
+    (st==="on"?"go":"scout")+'="'+k+'">'+
+   '<title>'+(st==="on"?L.n+(k===S.loc?"　你在此处":d>0?"　"+d+" 程":"　路不通"):
+     st==="heard"?L.n+"　听人说过，路还没走通":"？　还没走通")+'</title>'+
+   '<circle class="hit" cx="'+x+'" cy="'+y+'" r="9"/>'+
+   (cur?'<circle class="ring" cx="'+x+'" cy="'+y+'" r="6.4"/>':'')+
+   '<circle class="knot" cx="'+x+'" cy="'+y+'" r="'+(st==="on"?2.7:2.1)+'"/>'+
+   '<text class="nm" x="'+x+'" y="'+(y+8)+'">'+(st==="ghost"?"？":L.n)+'</text>'+
+   (mark.length?'<text class="mk" x="'+(x+4.6)+'" y="'+(y-3.4)+'">'+mark.join("")+'</text>':'')+
+   '</g>';
+ }
+ if(S.trip){
+  const L=S.trip.leg,t=cl(L.prog/L.d,0,1),
+   x1=px(L.from),y1=py(L.from),x2=px(L.to),y2=py(L.to);
+  e+='<line class="walkln" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'+
+   '<circle id="trav" class="trav" cx="'+(x1+(x2-x1)*t)+'" cy="'+(y1+(y2-y1)*t)+'" r="2.4"/>';
+ }
+ return '<svg class="cmap'+(big?" big":"")+'" viewBox="'+(-7*X)+' -2 '+((MAPW+14)*X)+' '+(MAPH+8)+
+  '" preserveAspectRatio="xMidYMid meet">'+e+'</svg>';
+}
+function updTrav(){
+ const T=S.trip;if(!T)return;
+ const c=document.getElementById("trav");
+ const L=T.leg,A=LOC[L.from],B=LOC[L.to],t=cl(L.prog/L.d,0,1),X=mapSX();
+ if(c){c.setAttribute("cx",(A.mx+(B.mx-A.mx)*t)*X);c.setAttribute("cy",A.my+(B.my-A.my)*t);}
+ const f=$("#tripfill");if(f)f.style.width=(t*100)+"%";
+ const tx=$("#triptx");
+ if(tx)tx.textContent="还有约 "+Math.max(1,Math.ceil((L.d-L.prog)/(tripSpeed()*roadOf(L.from,L.to).sp)))+" 息";
 }
 function openPanel(k){
  const ttl={wu:"武学",bag:"行囊",men:"门派",map:"舆图",ji:"纪事",set:"设置"}[k]||"";
@@ -1831,7 +2473,6 @@ function repanel(){ // 抽屉开着时原地刷新，不关窗
 const kv=(a,b)=>'<div class="kv"><span>'+a+'</span><b class="num">'+b+'</b></div>';
 const STATN={atk:"攻",def:"御",hp:"气血",spd:"捷",crit:"重手",dodge:"闪身",pen:"破防",yuan:"缘",weave:"织度",qi:"内力",drain:"引力",bleed:"流血",stack:"剑意",stun:"震慑"};
 function weaveWord(w){return w<=-4?"（几乎不在布上）":w<0?"（线头松脱）":w<3?"（浅浅一缕）":w<6?"（渐渐织密）":w<12?"（与布相连）":"（几近无缝）";}
-function chapReady(){const c=CHAP[S.ch];return c&&S.lvl>=c.r&&!S.end;}
 function renderLog(){
  if(!$("#log"))return;
  $("#log").innerHTML=LOGS.slice(0,60).map(l=>'<div class="logline '+l.c+'"><i>'+l.d+'</i>'+l.t+'</div>').join("")||'<div class="empty">无事发生</div>';
@@ -1882,15 +2523,6 @@ function actRate(){
   a==="step"?R.step.toFixed(1)+" 身法/息":a==="walk"?(R.walk*3600).toFixed(0)+" 奇遇/时辰":
   (R[a]*3600).toFixed(0)+" 件/时辰";
  return "正在"+A.n+"　"+v+"　（关掉网页也不停）";
-}
-function padHtml(){
- const cell=d=>{const t=nbr(d);
-  return t?'<div class="c"><button data-go="'+t+'"><b>'+DIRN[d]+'</b>'+LOC[t].n+'</button></div>'
-          :'<div class="c"><div class="non"></div></div>';};
- return '<div class="pad">'+
-  '<div class="c"></div>'+cell("n")+'<div class="c"></div>'+
-  cell("w")+'<div class="c"><div class="here2">'+LOC[S.loc].n+'</div></div>'+cell("e")+
-  '<div class="c"></div>'+cell("s")+'<div class="c"></div></div>';
 }
 /* ═══════════ 说话 ═══════════
    问得出东西的人才算人。有些话头要走到那一步才问得出口。 */
@@ -1969,19 +2601,32 @@ const TALK={
 function told(k,id){return (S.told||{})[k+":"+id];}
 function talkTo(k,id){
  const T=(TALK[k]||[]).find(x=>x.id===id);if(!T)return;
- if(T.key){ // 渡老指路——剧情推进就在这句话里
+ if(T.key){ // 渡老指路：他只给你一句话和一个地名
   if(S.end){replyBox(k,["「都完了。」他说，「你还想往哪儿去。」"]);return;}
-  if(chapReady()){
-   replyBox(k,["他用桨指了指岸上。","「你先得知道自己是谁。」他说，「这事我帮不上——得你自己往前走一段。」"],
-    ()=>{closeOv();showScene(S.scene&&SC[S.scene]?S.scene:CHAP[S.ch].at);});
-   return;
+  const c=chapNow();
+  if(!c){replyBox(k,["「往后的事，我也不知道了。」"]);return;}
+  const g=c.g||{},tx=["他把烟锅在船帮上磕了磕。"];
+  if(S.lvl<c.r){
+   tx.push("「还不到时候。」他说，「你现在这个样子出去，是给人添麻烦。」");
+   tx.push("「等你"+REALM[c.r].n+"了再来问我。」");
+  } else {
+   tx.push("「"+c.clue.t+"。」他说。");
+   tx.push(c.clue.tx);
+   if(g.loc){
+    S.heard=S.heard||{};
+    const knew=heardOf(g.loc)||locOpen(g.loc);
+    S.heard[g.loc]=1;
+    tx.push("「"+(locOpen(g.loc)?"往"+LOC[g.loc].n+"去":"那地方叫"+LOC[g.loc].n+"，路你自己找")+"。"+
+     (g.spot?"到了那儿，"+spotOf(g.loc,g.spot).n+"。":"")+
+     (g.tod?TOD.find(t=>t.k===g.tod[0]).n+"前后最好。":"")+"」");
+    if(!knew)tx.push("他拿桨在水面上划了个方向。你把它记在了图上。");
+   } else if(g.act){
+    tx.push("「这一桩不在别处，」他说，「在你自己身上。」");
+   }
   }
-  const c=CHAP[S.ch];
-  replyBox(k,["他摇摇头。","「还不到时候。」他说，「你现在这个样子出去，是给人添麻烦。」",
-   c?"「等你" + REALM[c.r].n + "了再来问我。」":"「往后的事，我也不知道了。」"]);
-  return;
+  replyBox(k,tx);save();renderMain();return;
  }
- if(T.need&&!T.need(S)){replyBox(k,["他看了你一眼，没接话。"]);return;}
+ if(T.need&&!T.need(S)) if(T.need&&!T.need(S)){replyBox(k,["他看了你一眼，没接话。"]);return;}
  S.told=S.told||{};
  const first=!told(k,id);
  if(first){S.told[k+":"+id]=1;
@@ -2085,7 +2730,7 @@ PANEL.men=()=>{
  h+='<div class="seam"></div><div class="hd">江湖故人</div><div class="grid2">';
  let any=0;
  for(const k in NPC){const v=S.aff[k]||0;if(!v&&k!=="dulao")continue;any=1;
-  const at=Object.keys(LOC).find(x=>(LOC[x].npc||[]).includes(k));
+  const at=NPC[k].loc;
   h+='<div class="card"><div class="t">'+NPC[k].n+'</div>'+
    '<div class="m">'+NPC[k].t+(at?'　·　'+LOC[at].n:'')+'</div>'+
    '<div class="track" style="margin-top:7px"><div class="fill exp" style="width:'+cl(v*2.5,0,100)+'%"></div></div>'+
@@ -2095,36 +2740,74 @@ PANEL.men=()=>{
  return h;
 };
 PANEL.map=()=>{
- const open=S.locs.filter(k=>LOC[k]);
- const xs=open.map(k=>LOC[k].x),ys=open.map(k=>LOC[k].y);
- const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
- let h='<div class="card"><div class="d">上北下南。只能沿路走，远处一程一程过去，路上会遇见事。有些去处不在图上——得自己翻出来。</div></div>'+
-  '<div class="mapg" style="grid-template-columns:repeat('+(x1-x0+1)+',minmax(78px,1fr))">';
- for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
-  const k=open.find(k=>LOC[k].x===x&&LOC[k].y===y);
-  if(!k){h+='<div class="cell off">·</div>';continue;}
-  const st=stepsTo(k);
-  h+='<div class="cell '+(S.loc===k?"cur":"on")+'"'+(S.loc===k?'':' data-go="'+k+'"')+'>'+
-   LOC[k].n+(S.loc===k?'':'<br><span style="opacity:.5;font-size:11px">'+(st<0?"不通":st+" 程")+'</span>')+'</div>';}
+ const N=mapNodes();
+ let h='<div class="card"><div class="d">上北下南。路是一针一针走出来的：走要时候，路上会遇事。'+
+  '虚的那些是听人说过、还没走通的地方——走到它跟前，往那个方向探一探，说不定就通了。'+
+  '朱线指着的，是你手上这条线索该去的地方。</div></div>'+
+  '<div class="mapbox">'+mapHtml(1)+'</div>'+
+  '<div class="seam"></div><div class="hd">脚下这些地方</div><div class="grid2">';
+ const ks=Object.keys(N).sort((a,b)=>(N[a]==="on"?0:1)-(N[b]==="on"?0:1)||LOC[a].my-LOC[b].my);
+ for(const k of ks){
+  const L=LOC[k],st=N[k];
+  if(st==="on"){
+   const d=k===S.loc?0:roadDist(k);
+   const who=npcHere(k).map(x=>NPC[x].n).join("、");
+   const un=spots(k).filter(x=>x.find&&FIND[x.find]&&!searched(x.find)).length;
+   h+='<div class="card'+(k===S.loc?" sel":"")+'"><div class="t">'+L.n+'</div>'+
+    '<div class="m">'+(L.reg||"")+'　'+(k===S.loc?"你在此处":d>0?d+" 程":"路不通")+
+    (S.been&&S.been[k]?"":"　<i>没去过</i>")+'</div>'+
+    '<div class="d">'+L.d+'</div>'+
+    '<div class="m">'+(who?"跟前有："+who+"　":"")+(un?"还有 "+un+" 处没搜过":"")+'</div>'+
+    (k===S.loc?'':'<div class="btns"><button class="btn sm pri" data-go="'+k+'">动身</button></div>')+
+    '</div>';
+  } else {
+   h+='<div class="card"><div class="t">'+(st==="heard"?L.n:"？")+'</div>'+
+    '<div class="m">'+(st==="heard"?"听人说过，路还没走通":"那个方向像是有路")+'</div>'+
+    '<div class="d">'+(st==="heard"?"从"+(LOC[(L.to||[]).find(x=>locOpen(x))]||{n:"某处"}).n+"往那边去，得自己探。":"——")+'</div>'+
+    ((LOC[S.loc].to||[]).includes(k)?'<div class="btns"><button class="btn sm" data-scout="'+k+'">探路</button></div>':'')+
+    '</div>';
+  }
+ }
  return h+'</div>';
 };
 PANEL.ji=()=>{
- let h='<div class="hd">江湖纪事</div>';
- CHAP.forEach((c,i)=>{
-  const done=S.ch>i,now=S.ch===i,ok=now&&S.lvl>=c.r;
-  h+='<div class="card '+(ok?"sel":"")+'"><div class="row"><div class="g">'+
-   '<div class="t">'+c.n+'</div><div class="d">'+(done||now?c.d:"——")+'</div></div>'+
-   '<div>'+(done?'<span class="tag jade">已了</span>':now?(ok?'<span class="tag gold">可继</span>':'<span class="tag red">需 '+REALM[c.r].n+'</span>'):'<span class="tag">未至</span>')+'</div></div>'+
-   (ok?'<div class="btns"><button class="btn pri" data-ch="1">往下走</button></div>':"")+'</div>';});
- if(S.end)h+='<div class="card"><div class="t">你的选择：'+S.end+'</div><div class="d">故事已终，江湖仍在。</div></div>';
+ S.clueSeen=S.ch;
+ let h="";
+ const c=chapNow();
+ if(c){
+  h+='<div class="hd">手上的线索</div><div class="card sel"><div class="t">'+c.clue.t+'</div>'+
+   '<div class="d">'+c.clue.tx+'</div><div class="seam"></div>';
+  for(const r of storyRows())
+   h+='<div class="rowq'+(r[2]?" ok":"")+'"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';
+  h+='<div class="m" style="margin-top:9px">'+(storyReady()
+    ?"都齐了。合上这一页，事情就在眼前。"
+    :"条件齐了，事情自己找上来——这里没有「往下走」可点。不知道该往哪儿去，就找人打听，或者问渡老。")+'</div>';
+  if(S.scene&&SC[S.scene])h+='<div class="btns"><button class="btn pri" data-ch="1">接着走　<small>（上回没了结）</small></button></div>';
+  h+='</div>';
+ } else if(S.end){
+  h+='<div class="hd">已了</div><div class="card"><div class="t">你的选择：'+S.end+'</div>'+
+   '<div class="d">故事已终，江湖仍在。</div></div>';
+ }
+ h+='<div class="seam"></div><div class="hd">章回</div>';
+ CHAP.forEach((x,i)=>{
+  const done=S.ch>i||S.end,now=S.ch===i&&!S.end;
+  h+='<div class="card"><div class="row"><div class="g">'+
+   '<div class="t">'+(done||now?x.n:"第"+cn(i+1)+"章 · ？？")+'</div>'+
+   '<div class="d">'+(done||now?x.d:"——")+'</div></div><div>'+
+   (done?'<span class="tag jade">已了</span>':now?'<span class="tag gold">在走</span>':'<span class="tag">未至</span>')+
+   '</div></div></div>';});
  h+='<div class="seam"></div><div class="hd">行迹</div>'+
-  kv("在江湖上",(S.days+1)+" 日")+kv("交手",S.kills+" 场")+kv("奇遇",S.evs+" 桩")+
+  kv("在江湖上",(S.days+1)+" 日")+kv("眼下时辰",todName())+
+  kv("走过的地方",(S.locs||[]).length+" 处")+kv("交手",S.kills+" 场")+kv("奇遇",S.evs+" 桩")+
   kv("交情总计",totalAff(S))+kv("织度",weaveTotal(S));
  return h;
 };
 /* ── 设置 ── */
 PANEL.set=()=>{
- return '<div class="hd">存档格</div>'+
+ return '<div class="hd">怎么走</div>'+
+ '<div class="card"><div class="d">此地分去处，行路要时候，线索只给一句话——玩法与从前不同，值得看一眼。</div>'+
+ '<div class="btns"><button class="btn sm pri" data-guide="1">看看</button></div></div>'+
+ '<div class="seam"></div><div class="hd">存档格</div>'+
  '<div class="card"><div class="d">四个独立的格子。结局不可回头，分岔之前存一格，可以把三个结局都看完。</div></div>'+
  slotCards()+
  (FORKM?'<div class="card"><div class="t">分岔前（自动）</div>'+
@@ -2147,19 +2830,31 @@ PANEL.set=()=>{
  '<div class="btns"><button class="btn" data-reset="1">重开一世</button></div></div>'+
  '<div class="seam"></div><div class="hd">关于</div>'+
  '<div class="card"><div class="d">《天衣 · 无缝的江湖》是一个纯文字放置武侠。世界观、门派、武学、人物、剧情皆为原创，与任何武侠小说无涉。'+
- '<br><br>玩法上向《放置江湖》致意：离线也长功、以文字承载战斗与奇遇、门派与游历驱动成长。</div></div>';
+ '<br><br>玩法上向《放置江湖》致意：离线也长功、以文字承载战斗与奇遇、一处地方底下还有去处、'+
+ '行路要脚程、江湖自己把事情递到你面前——而不是等你点「往下走」。</div></div>';
 };
 /* ═══════════ 事件绑定 ═══════════ */
 function bind(){
  const M=document;
- M.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{S.act=b.dataset.act;if(S.act!=="form")S.actSub=null;save();renderMain();addLog("你开始"+ACT[S.act].n+"。","");});
+ M.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
+  const a=b.dataset.act;
+  if(["herb","mine","silk"].includes(a)&&!((curSpot().acts||[]).includes(a))){
+   toast("这处做不得这桩活计。换个去处。");return;}
+  S.act=a;if(S.act!=="form")S.actSub=null;save();renderMain();
+  addLog("你开始"+ACT[S.act].n+"。","");checkStory();});
  M.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>{S.actSub=b.dataset.sub;save();renderMain();});
  M.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{
   if($("#ov").innerHTML){closeOv();TAB="place";}
-  travel(b.dataset.go);
-  const L=LOC[S.loc];if(!L.acts.includes(S.act)&&["herb","mine","silk"].includes(S.act)){
-   S.act="sit";addLog("此地做不得那桩活计，你改为打坐。","m");}
-  save();renderMain();});
+  startTrip(b.dataset.go);});
+ M.querySelectorAll("[data-scout]").forEach(b=>b.onclick=()=>{
+  const t=b.dataset.scout;
+  if($("#ov").innerHTML){closeOv();TAB="place";}
+  if(!(LOC[S.loc].to||[]).includes(t)){toast("得先走到那条路的路口上去。");return;}
+  scoutTo(t);});
+ M.querySelectorAll("[data-spot]").forEach(b=>b.onclick=()=>goSpot(b.dataset.spot));
+ M.querySelectorAll("[data-pace]").forEach(b=>b.onclick=()=>setPace(b.dataset.pace));
+ M.querySelectorAll("[data-stop]").forEach(b=>b.onclick=stopTrip);
+ M.querySelectorAll("[data-ask]").forEach(b=>b.onclick=askAround);
  M.querySelectorAll("[data-fight]").forEach(b=>b.onclick=()=>fight(S,b.dataset.fight));
  M.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>{
   const [k,id]=b.dataset.eq.split("|");
@@ -2196,7 +2891,8 @@ function bind(){
   S.silver-=o.p; if(ITEM[id])item(S,id,1); else gearGain(S,id);
   save();renderMain();render();});
  M.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{
-  showScene(S.scene&&SC[S.scene]?S.scene:CHAP[S.ch].at);});
+  if(S.scene&&SC[S.scene]){closeOv();S.hold=0;showScene(S.scene);}});
+ M.querySelectorAll("[data-guide]").forEach(b=>b.onclick=()=>{closeOv();guideBox();});
  M.querySelectorAll("[data-exp]").forEach(b=>b.onclick=exportSave);
  M.querySelectorAll("[data-slotsave]").forEach(b=>b.onclick=()=>{
   const i=+b.dataset.slotsave;
@@ -2359,6 +3055,10 @@ function migrate(){
  const t=newGame("无名","gu");
  for(const k in t)if(S[k]===undefined)S[k]=t[k];
  for(const k in ATTR){if(S.at[k]===undefined)S.at[k]=5;if(S.bonus[k]===undefined)S.bonus[k]=0;}
+ if(!LOC[S.loc])S.loc="dukou";
+ S.spot=spotOf(S.loc,S.spot).id;            // 旧档没有「去处」这一说
+ S.been=S.been||{};for(const k of S.locs)S.been[k]=1;
+ if(S.trip&&(!S.trip.leg||!LOC[S.trip.leg.to]))S.trip=null;
 }
 /* ═══════════ 离线 ═══════════ */
 function offline(ms){
@@ -2369,8 +3069,14 @@ function offline(ms){
  const before={exp:S.exp,lvl:S.lvl,silver:S.silver,bag:{...S.bag},arts:{}};
  for(const i in S.arts)before.arts[i]=S.arts[i].lv;
  S.offEv=0;
+ const road=[];
+ if(S.trip){const T=S.trip;S.trip=null;
+  const k=T.scout?(rnd(1)<scoutOdds(T.leg.to)?T.leg.to:null):T.path[T.path.length-1];
+  if(k){unlock(S,k);S.loc=k;S.spot=spots(k)[0].id;S.been=S.been||{};S.been[k]=1;
+   road.push("那段路你自己走完了。醒过神来，人已经在"+LOC[k].n+"。");}
+  else road.push("你在路上绕了半天，又回到了原处。");}
  let left=sec;while(left>0){const d=Math.min(left,600);tick(S,d,true);left-=d;}
- const lines=[];
+ const lines=road.slice();
  const dex=S.exp-before.exp+(S.lvl>before.lvl?expNeed(before.lvl):0);
  if(S.lvl>before.lvl)lines.push("你破了 "+(S.lvl-before.lvl)+" 重境界，如今是「"+REALM[S.lvl].n+"」。");
  lines.push("内力修为增了约 "+fmt(Math.max(0,dex))+"。");
@@ -2428,6 +3134,12 @@ function originDialog(){
 }
 /* ═══════════ 启动 ═══════════ */
 async function boot(){
+ if(!(window.storage&&window.storage.get)){
+  try{const t="tianyi:probe";localStorage.setItem(t,"1");localStorage.removeItem(t);
+   window.storage={get:async k=>({value:localStorage.getItem(k)}),
+    set:async(k,v)=>{localStorage.setItem(k,v);},
+    delete:async k=>{localStorage.removeItem(k);}};}catch(e){}
+ }
  hasStore=!!(window.storage&&window.storage.get);
  await loadSlots();await loadFork();
  const d=hasStore?await load():null;
@@ -2441,14 +3153,24 @@ async function boot(){
   if(o)offlineDialog(o);
   else if(S.scene&&SC[S.scene])showScene(S.scene);
  } else prologue();
- setInterval(()=>{ if(!S)return; const r0=S.lvl; tick(S,1,false);
-   if(S.lvl!==r0&&!$("#ov").innerHTML)renderMain(); renderChar();
-   $("#clock").textContent="江湖第 "+(S.days+1)+" 日"; $("#silver").innerHTML="银两 <b>"+fmt(S.silver)+"</b>"; },1000);
+ let beat=0;
+ setInterval(()=>{ if(!S)return;
+   const r0=S.lvl,t0=todIdx(),loc0=S.loc,trip0=!!S.trip;
+   tick(S,1,false);
+   if(S.trip)updTrav();
+   if(todIdx()!==t0)todTurn();
+   else if((S.lvl!==r0||loc0!==S.loc||trip0!==!!S.trip)&&!$("#ov").innerHTML)renderMain();
+   renderChar(); clockTx();
+   if((++beat)%2===0)checkStory();
+ },1000);
  setInterval(()=>{if(S)save();},20000);
  setInterval(()=>{if(S&&savePending)save(true);},30000);
  document.addEventListener("visibilitychange",()=>{if(document.hidden&&S)save(true);});
  window.addEventListener("beforeunload",()=>{if(S)save(true);});
  const mc=$("#mchar");if(mc)mc.onclick=()=>$("#char").classList.toggle("show");
+ let rz=0;
+ window.addEventListener("resize",()=>{clearTimeout(rz);
+  rz=setTimeout(()=>{if(S&&!$("#ov").innerHTML)renderMain();},220);});
  if(S&&S.au){AU.on=S.au.on!==false;AU.vb=S.au.vb!=null?S.au.vb:AU.vb;AU.vs=S.au.vs!=null?S.au.vs:AU.vs;}
  document.addEventListener("click",e=>{
   const first=!AU.ctx;
